@@ -18,7 +18,7 @@ class TeamNotFoundError(Exception):
 
     def __init__(self, team_id: str):
         """Initialize exception.
-        
+
         Args:
             team_id: ID of the team that was not found
         """
@@ -31,7 +31,7 @@ class TeamAlreadyExistsError(Exception):
 
     def __init__(self, team_name: str):
         """Initialize exception.
-        
+
         Args:
             team_name: Name of the team that already exists
         """
@@ -41,7 +41,7 @@ class TeamAlreadyExistsError(Exception):
 
 class TeamRepository(ABC):
     """Abstract base class for Team repositories.
-    
+
     This interface defines the contract for team data persistence.
     Implementations can use different storage backends (in-memory,
     Cloud Datastore, Firestore, PostgreSQL, etc.).
@@ -50,13 +50,13 @@ class TeamRepository(ABC):
     @abstractmethod
     async def create(self, team_data: TeamCreate) -> Team:
         """Create a new team.
-        
+
         Args:
             team_data: Team creation data
-            
+
         Returns:
             Created team with generated ID and timestamps
-            
+
         Raises:
             TeamAlreadyExistsError: If team with same name exists
         """
@@ -65,10 +65,10 @@ class TeamRepository(ABC):
     @abstractmethod
     async def get_by_id(self, team_id: str) -> Optional[Team]:
         """Get team by ID.
-        
+
         Args:
             team_id: Team identifier
-            
+
         Returns:
             Team if found, None otherwise
         """
@@ -77,10 +77,10 @@ class TeamRepository(ABC):
     @abstractmethod
     async def get_by_name(self, name: str) -> Optional[Team]:
         """Get team by name.
-        
+
         Args:
             name: Team name
-            
+
         Returns:
             Team if found, None otherwise
         """
@@ -89,7 +89,7 @@ class TeamRepository(ABC):
     @abstractmethod
     async def list_all(self) -> List[Team]:
         """List all teams.
-        
+
         Returns:
             List of all teams
         """
@@ -98,14 +98,14 @@ class TeamRepository(ABC):
     @abstractmethod
     async def update(self, team_id: str, team_data: TeamUpdate) -> Team:
         """Update an existing team.
-        
+
         Args:
             team_id: Team identifier
             team_data: Team update data
-            
+
         Returns:
             Updated team
-            
+
         Raises:
             TeamNotFoundError: If team not found
         """
@@ -114,10 +114,10 @@ class TeamRepository(ABC):
     @abstractmethod
     async def delete(self, team_id: str) -> bool:
         """Delete a team.
-        
+
         Args:
             team_id: Team identifier
-            
+
         Returns:
             True if deleted, False if not found
         """
@@ -126,10 +126,10 @@ class TeamRepository(ABC):
     @abstractmethod
     async def exists_by_name(self, name: str) -> bool:
         """Check if a team with given name exists.
-        
+
         Args:
             name: Team name
-            
+
         Returns:
             True if exists, False otherwise
         """
@@ -138,15 +138,15 @@ class TeamRepository(ABC):
 
 class InMemoryTeamRepository(TeamRepository):
     """In-memory implementation of TeamRepository.
-    
+
     This implementation stores teams in memory and is suitable for:
     - Development and testing
     - Single-instance deployments
     - Prototyping
-    
+
     For production with multiple instances, use a persistent storage
     backend like Cloud Datastore or Firestore.
-    
+
     Attributes:
         _teams: Dictionary mapping team IDs to Team objects
         _teams_by_name: Dictionary mapping team names to team IDs (for quick lookup)
@@ -159,13 +159,13 @@ class InMemoryTeamRepository(TeamRepository):
 
     async def create(self, team_data: TeamCreate) -> Team:
         """Create a new team.
-        
+
         Args:
             team_data: Team creation data
-            
+
         Returns:
             Created team with generated ID and timestamps
-            
+
         Raises:
             TeamAlreadyExistsError: If team with same name exists
         """
@@ -195,10 +195,10 @@ class InMemoryTeamRepository(TeamRepository):
 
     async def get_by_id(self, team_id: str) -> Optional[Team]:
         """Get team by ID.
-        
+
         Args:
             team_id: Team identifier
-            
+
         Returns:
             Team if found, None otherwise
         """
@@ -206,10 +206,10 @@ class InMemoryTeamRepository(TeamRepository):
 
     async def get_by_name(self, name: str) -> Optional[Team]:
         """Get team by name.
-        
+
         Args:
             name: Team name
-            
+
         Returns:
             Team if found, None otherwise
         """
@@ -220,7 +220,7 @@ class InMemoryTeamRepository(TeamRepository):
 
     async def list_all(self) -> List[Team]:
         """List all teams.
-        
+
         Returns:
             List of all teams sorted by creation date
         """
@@ -230,14 +230,14 @@ class InMemoryTeamRepository(TeamRepository):
 
     async def update(self, team_id: str, team_data: TeamUpdate) -> Team:
         """Update an existing team.
-        
+
         Args:
             team_id: Team identifier
             team_data: Team update data
-            
+
         Returns:
             Updated team
-            
+
         Raises:
             TeamNotFoundError: If team not found
         """
@@ -263,10 +263,10 @@ class InMemoryTeamRepository(TeamRepository):
 
     async def delete(self, team_id: str) -> bool:
         """Delete a team.
-        
+
         Args:
             team_id: Team identifier
-            
+
         Returns:
             True if deleted, False if not found
         """
@@ -282,10 +282,10 @@ class InMemoryTeamRepository(TeamRepository):
 
     async def exists_by_name(self, name: str) -> bool:
         """Check if a team with given name exists.
-        
+
         Args:
             name: Team name
-            
+
         Returns:
             True if exists, False otherwise
         """

@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field, field_validator
 
 class TeamBase(BaseModel):
     """Base model for Team with common fields.
-    
+
     Attributes:
         name: Unique team identifier (immutable after creation)
         description: Human-readable team description
@@ -30,9 +30,7 @@ class TeamBase(BaseModel):
         pattern=r"^[a-zA-Z0-9\-_]+$",
         description="Team name (alphanumeric, hyphens, underscores only)",
     )
-    description: Optional[str] = Field(
-        None, max_length=1000, description="Team description"
-    )
+    description: Optional[str] = Field(None, max_length=1000, description="Team description")
     members: List[str] = Field(
         default_factory=list,
         description="List of team member identifiers (emails or user IDs)",
@@ -42,13 +40,13 @@ class TeamBase(BaseModel):
     @classmethod
     def validate_name(cls, value: str) -> str:
         """Validate team name follows conventions.
-        
+
         Args:
             value: The team name to validate
-            
+
         Returns:
             The validated team name
-            
+
         Raises:
             ValueError: If name is invalid
         """
@@ -62,13 +60,13 @@ class TeamBase(BaseModel):
     @classmethod
     def validate_members(cls, value: List[str]) -> List[str]:
         """Validate members list.
-        
+
         Args:
             value: List of member identifiers
-            
+
         Returns:
             The validated members list
-            
+
         Raises:
             ValueError: If members list is invalid
         """
@@ -79,7 +77,7 @@ class TeamBase(BaseModel):
 
 class TeamCreate(TeamBase):
     """Model for creating a new team.
-    
+
     Used for POST /teams endpoint.
     """
 
@@ -88,33 +86,29 @@ class TeamCreate(TeamBase):
 
 class TeamUpdate(BaseModel):
     """Model for updating an existing team.
-    
+
     Used for PUT /teams/{team_id} endpoint.
     All fields are optional for partial updates.
-    
+
     Attributes:
         description: Updated description
         members: Updated members list (replaces existing)
     """
 
-    description: Optional[str] = Field(
-        None, max_length=1000, description="Team description"
-    )
-    members: Optional[List[str]] = Field(
-        None, description="List of team member identifiers"
-    )
+    description: Optional[str] = Field(None, max_length=1000, description="Team description")
+    members: Optional[List[str]] = Field(None, description="List of team member identifiers")
 
     @field_validator("members")
     @classmethod
     def validate_members(cls, value: Optional[List[str]]) -> Optional[List[str]]:
         """Validate members list.
-        
+
         Args:
             value: List of member identifiers
-            
+
         Returns:
             The validated members list
-            
+
         Raises:
             ValueError: If members list is invalid
         """
@@ -125,9 +119,9 @@ class TeamUpdate(BaseModel):
 
 class Team(TeamBase):
     """Complete Team entity with metadata.
-    
+
     This is the full representation returned by the API.
-    
+
     Attributes:
         id: Unique team identifier (generated server-side)
         name: Team name (inherited from TeamBase)
@@ -138,9 +132,7 @@ class Team(TeamBase):
     """
 
     id: str = Field(..., description="Unique team identifier")
-    created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Creation timestamp"
-    )
+    created_at: datetime = Field(default_factory=datetime.utcnow, description="Creation timestamp")
     updated_at: datetime = Field(
         default_factory=datetime.utcnow, description="Last update timestamp"
     )
@@ -149,7 +141,7 @@ class Team(TeamBase):
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert team to dictionary representation.
-        
+
         Returns:
             Dictionary representation of the team
         """
