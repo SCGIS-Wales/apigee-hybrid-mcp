@@ -1,0 +1,244 @@
+API PROXIES API
+================
+Timestamp: 2025-12-08_21-42-21_UTC
+Resource: apis (API Proxies)
+
+Base Path: /v1/organizations/{organizationId}/apis/{apiId}
+
+DESCRIPTION
+-----------
+API Proxies are the core of Apigee. They define the interface between clients and 
+backend services, including policies for security, rate limiting, transformation, etc.
+
+OPERATIONS
+----------
+
+1. LIST /v1/organizations/{org}/apis
+   Description: Lists all API proxies
+   Parameters:
+     - org (path, required): Organization ID
+     - includeRevisions (query, optional): Include revision details
+     - includeMetaData (query, optional): Include metadata
+   Response: List of API proxy names
+
+2. GET /v1/organizations/{org}/apis/{api}
+   Description: Gets API proxy metadata (all revisions)
+   Parameters:
+     - org (path, required): Organization ID
+     - api (path, required): API proxy name
+   Response: API proxy object with revisions
+
+3. CREATE /v1/organizations/{org}/apis
+   Description: Creates a new API proxy (imports bundle)
+   Method: POST
+   Parameters:
+     - org (path, required): Organization ID
+     - name (query, required): API proxy name
+     - action (query, optional): import or validate
+   Request Body: API proxy bundle (ZIP file, multipart/form-data)
+   Response: API proxy revision object
+
+4. DELETE /v1/organizations/{org}/apis/{api}
+   Description: Deletes an API proxy (all revisions)
+   Parameters:
+     - org (path, required): Organization ID
+     - api (path, required): API proxy name
+   Response: API proxy object
+
+REVISIONS OPERATIONS
+--------------------
+
+5. LIST /v1/organizations/{org}/apis/{api}/revisions
+   Description: Lists all revisions of an API proxy
+   Parameters:
+     - org (path, required): Organization ID
+     - api (path, required): API proxy name
+   Response: List of revision numbers
+
+6. GET /v1/organizations/{org}/apis/{api}/revisions/{rev}
+   Description: Gets specific revision details
+   Parameters:
+     - org (path, required): Organization ID
+     - api (path, required): API proxy name
+     - rev (path, required): Revision number
+     - format (query, optional): bundle or xml
+   Response: API proxy revision object or bundle
+
+7. UPDATE /v1/organizations/{org}/apis/{api}/revisions/{rev}
+   Description: Updates an API proxy revision
+   Method: POST
+   Parameters:
+     - org (path, required): Organization ID
+     - api (path, required): API proxy name
+     - rev (path, required): Revision number
+   Request Body: API proxy bundle (ZIP)
+   Response: Updated revision object
+
+8. DELETE /v1/organizations/{org}/apis/{api}/revisions/{rev}
+   Description: Deletes a specific revision
+   Parameters:
+     - org (path, required): Organization ID
+     - api (path, required): API proxy name
+     - rev (path, required): Revision number
+   Response: API proxy revision object
+
+DEPLOYMENT OPERATIONS
+---------------------
+
+9. DEPLOY /v1/organizations/{org}/environments/{env}/apis/{api}/revisions/{rev}/deployments
+   Description: Deploys an API proxy revision to environment
+   Method: POST
+   Parameters:
+     - org (path, required): Organization ID
+     - env (path, required): Environment name
+     - api (path, required): API proxy name
+     - rev (path, required): Revision number
+     - override (query, optional): Override existing deployment
+     - sequencedRollout (query, optional): Enable blue-green deployment
+   Response: Deployment object
+
+10. UNDEPLOY /v1/organizations/{org}/environments/{env}/apis/{api}/revisions/{rev}/deployments
+    Description: Undeploys an API proxy revision
+    Method: DELETE
+    Parameters:
+      - org (path, required): Organization ID
+      - env (path, required): Environment name
+      - api (path, required): API proxy name
+      - rev (path, required): Revision number
+    Response: Empty response
+
+11. GET /v1/organizations/{org}/environments/{env}/apis/{api}/revisions/{rev}/deployments
+    Description: Gets deployment status
+    Parameters:
+      - org (path, required): Organization ID
+      - env (path, required): Environment name
+      - api (path, required): API proxy name
+      - rev (path, required): Revision number
+    Response: Deployment object
+
+12. LIST /v1/organizations/{org}/environments/{env}/apis/{api}/deployments
+    Description: Lists all deployments of an API proxy in environment
+    Parameters:
+      - org (path, required): Organization ID
+      - env (path, required): Environment name
+      - api (path, required): API proxy name
+    Response: List of deployments
+
+RESOURCE SCHEMA
+---------------
+API Proxy:
+{
+  "name": "string",                    // API proxy name
+  "revision": ["string"],              // List of revisions
+  "metaData": {
+    "createdAt": "string",
+    "lastModifiedAt": "string",
+    "createdBy": "string",
+    "lastModifiedBy": "string"
+  }
+}
+
+API Proxy Revision:
+{
+  "name": "string",                    // API proxy name
+  "revision": "string",                // Revision number
+  "basepaths": ["string"],            // Base paths
+  "configurationVersion": {
+    "majorVersion": "string",
+    "minorVersion": "string"
+  },
+  "contextInfo": "string",
+  "createdAt": "string",
+  "createdBy": "string",
+  "description": "string",
+  "displayName": "string",
+  "entityMetaDataAsProperties": {},
+  "lastModifiedAt": "string",
+  "lastModifiedBy": "string",
+  "policies": ["string"],              // List of policy names
+  "proxyEndpoints": ["string"],        // List of proxy endpoints
+  "resourceFiles": {},
+  "resources": ["string"],
+  "spec": "string",                    // OpenAPI spec reference
+  "targetEndpoints": ["string"],       // List of target endpoints
+  "targetServers": ["string"],         // List of target servers
+  "teams": ["string"],
+  "type": "string"                     // API type
+}
+
+Deployment:
+{
+  "name": "string",
+  "environment": "string",
+  "apiProxy": "string",
+  "revision": "string",
+  "deployStartTime": "string",
+  "basePath": "string",
+  "state": "string",                   // deployed, undeployed, error
+  "pods": [{
+    "podName": "string",
+    "podStatus": "string",
+    "deploymentStatus": "string",
+    "deploymentTime": "string"
+  }]
+}
+
+EXAMPLES
+--------
+List API proxies:
+  GET /v1/organizations/my-org/apis
+
+Create API proxy:
+  POST /v1/organizations/my-org/apis?name=my-api&action=import
+  Content-Type: multipart/form-data
+  Body: <API proxy bundle ZIP>
+
+Get API proxy:
+  GET /v1/organizations/my-org/apis/my-api
+
+List revisions:
+  GET /v1/organizations/my-org/apis/my-api/revisions
+
+Get specific revision:
+  GET /v1/organizations/my-org/apis/my-api/revisions/1
+
+Deploy revision:
+  POST /v1/organizations/my-org/environments/prod/apis/my-api/revisions/1/deployments
+
+Undeploy revision:
+  DELETE /v1/organizations/my-org/environments/prod/apis/my-api/revisions/1/deployments
+
+Delete API proxy:
+  DELETE /v1/organizations/my-org/apis/my-api
+
+COMMON USE CASES
+----------------
+1. Import and deploy API proxies
+2. Manage API proxy revisions
+3. Blue-green deployments with sequenced rollout
+4. Monitor deployment status
+5. Roll back to previous revisions
+
+ERROR CODES
+-----------
+- 404: API proxy not found
+- 403: Permission denied
+- 409: Deployment conflict
+- 400: Invalid bundle or configuration
+
+BEST PRACTICES
+--------------
+- Use revision control for API proxy versions
+- Test in lower environments before prod
+- Use sequenced rollout for zero-downtime deployments
+- Include comprehensive error handling policies
+- Document APIs with OpenAPI specifications
+- Use shared flows for common policies
+
+NOTES
+-----
+- Maximum 1000 revisions per API proxy
+- Bundle size limit: 50 MB
+- API proxy names are immutable
+- Deployed revisions cannot be deleted
+- Changes require new revision and redeployment

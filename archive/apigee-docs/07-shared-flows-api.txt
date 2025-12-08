@@ -1,0 +1,246 @@
+SHARED FLOWS API
+=================
+Timestamp: 2025-12-08_21-42-21_UTC
+Resource: sharedflows
+
+Base Path: /v1/organizations/{organizationId}/sharedflows/{sharedflowId}
+
+DESCRIPTION
+-----------
+Shared Flows are reusable policy sequences that can be called from multiple API proxies
+using FlowCallout policy. They promote code reuse and consistent policy enforcement.
+
+OPERATIONS
+----------
+
+1. LIST /v1/organizations/{org}/sharedflows
+   Description: Lists all shared flows
+   Parameters:
+     - org (path, required): Organization ID
+     - includeRevisions (query, optional): Include revision details
+     - includeMetaData (query, optional): Include metadata
+   Response: List of shared flow names
+
+2. GET /v1/organizations/{org}/sharedflows/{sharedflow}
+   Description: Gets shared flow metadata
+   Parameters:
+     - org (path, required): Organization ID
+     - sharedflow (path, required): Shared flow name
+   Response: Shared flow object with revisions
+
+3. CREATE /v1/organizations/{org}/sharedflows
+   Description: Creates a new shared flow (imports bundle)
+   Method: POST
+   Parameters:
+     - org (path, required): Organization ID
+     - name (query, required): Shared flow name
+     - action (query, optional): import or validate
+   Request Body: Shared flow bundle (ZIP file)
+   Response: Shared flow revision object
+
+4. DELETE /v1/organizations/{org}/sharedflows/{sharedflow}
+   Description: Deletes a shared flow (all revisions)
+   Parameters:
+     - org (path, required): Organization ID
+     - sharedflow (path, required): Shared flow name
+   Response: Shared flow object
+
+REVISIONS OPERATIONS
+--------------------
+
+5. LIST /v1/organizations/{org}/sharedflows/{sharedflow}/revisions
+   Description: Lists all revisions
+   Parameters:
+     - org (path, required): Organization ID
+     - sharedflow (path, required): Shared flow name
+   Response: List of revision numbers
+
+6. GET /v1/organizations/{org}/sharedflows/{sharedflow}/revisions/{rev}
+   Description: Gets specific revision details
+   Parameters:
+     - org (path, required): Organization ID
+     - sharedflow (path, required): Shared flow name
+     - rev (path, required): Revision number
+     - format (query, optional): bundle or xml
+   Response: Shared flow revision object or bundle
+
+7. UPDATE /v1/organizations/{org}/sharedflows/{sharedflow}/revisions/{rev}
+   Description: Updates a shared flow revision
+   Method: POST
+   Parameters:
+     - org (path, required): Organization ID
+     - sharedflow (path, required): Shared flow name
+     - rev (path, required): Revision number
+   Request Body: Shared flow bundle (ZIP)
+   Response: Updated revision object
+
+8. DELETE /v1/organizations/{org}/sharedflows/{sharedflow}/revisions/{rev}
+   Description: Deletes a specific revision
+   Parameters:
+     - org (path, required): Organization ID
+     - sharedflow (path, required): Shared flow name
+     - rev (path, required): Revision number
+   Response: Shared flow revision object
+
+DEPLOYMENT OPERATIONS
+---------------------
+
+9. DEPLOY /v1/organizations/{org}/environments/{env}/sharedflows/{sharedflow}/revisions/{rev}/deployments
+   Description: Deploys shared flow revision to environment
+   Method: POST
+   Parameters:
+     - org (path, required): Organization ID
+     - env (path, required): Environment name
+     - sharedflow (path, required): Shared flow name
+     - rev (path, required): Revision number
+     - override (query, optional): Override existing deployment
+   Response: Deployment object
+
+10. UNDEPLOY /v1/organizations/{org}/environments/{env}/sharedflows/{sharedflow}/revisions/{rev}/deployments
+    Description: Undeploys shared flow revision
+    Method: DELETE
+    Parameters:
+      - org (path, required): Organization ID
+      - env (path, required): Environment name
+      - sharedflow (path, required): Shared flow name
+      - rev (path, required): Revision number
+    Response: Empty response
+
+11. GET /v1/organizations/{org}/environments/{env}/sharedflows/{sharedflow}/revisions/{rev}/deployments
+    Description: Gets deployment status
+    Parameters:
+      - org (path, required): Organization ID
+      - env (path, required): Environment name
+      - sharedflow (path, required): Shared flow name
+      - rev (path, required): Revision number
+    Response: Deployment object
+
+12. LIST /v1/organizations/{org}/environments/{env}/sharedflows/{sharedflow}/deployments
+    Description: Lists all deployments of shared flow
+    Parameters:
+      - org (path, required): Organization ID
+      - env (path, required): Environment name
+      - sharedflow (path, required): Shared flow name
+    Response: List of deployments
+
+RESOURCE SCHEMA
+---------------
+Shared Flow:
+{
+  "name": "string",                    // Shared flow name
+  "revision": ["string"],              // List of revisions
+  "metaData": {
+    "createdAt": "string",
+    "lastModifiedAt": "string"
+  }
+}
+
+Shared Flow Revision:
+{
+  "name": "string",
+  "revision": "string",
+  "configurationVersion": {
+    "majorVersion": "string",
+    "minorVersion": "string"
+  },
+  "contextInfo": "string",
+  "createdAt": "string",
+  "createdBy": "string",
+  "description": "string",
+  "displayName": "string",
+  "lastModifiedAt": "string",
+  "lastModifiedBy": "string",
+  "policies": ["string"],              // List of policies
+  "resourceFiles": {},
+  "resources": ["string"],
+  "sharedFlows": ["string"],          // Nested shared flows
+  "type": "string"
+}
+
+BUNDLE STRUCTURE
+----------------
+sharedflow-bundle.zip:
+  /sharedflowbundle/
+    /manifest.xml                      // Shared flow configuration
+    /policies/
+      policy1.xml
+      policy2.xml
+    /resources/
+      jsc/
+        script.js
+      java/
+        library.jar
+
+EXAMPLES
+--------
+Create shared flow:
+  POST /v1/organizations/my-org/sharedflows?name=security-flow&action=import
+  Content-Type: multipart/form-data
+  Body: <Shared flow bundle ZIP>
+
+List shared flows:
+  GET /v1/organizations/my-org/sharedflows
+
+Get shared flow:
+  GET /v1/organizations/my-org/sharedflows/security-flow
+
+List revisions:
+  GET /v1/organizations/my-org/sharedflows/security-flow/revisions
+
+Deploy shared flow:
+  POST /v1/organizations/my-org/environments/prod/sharedflows/security-flow/revisions/1/deployments
+
+Undeploy shared flow:
+  DELETE /v1/organizations/my-org/environments/prod/sharedflows/security-flow/revisions/1/deployments
+
+Update shared flow:
+  POST /v1/organizations/my-org/sharedflows/security-flow/revisions/2
+  Body: <Updated bundle ZIP>
+
+Delete shared flow:
+  DELETE /v1/organizations/my-org/sharedflows/security-flow
+
+FLOWCALLOUT USAGE
+-----------------
+In API proxy, reference shared flow:
+<FlowCallout name="Call-Security-Flow">
+  <SharedFlowBundle>security-flow</SharedFlowBundle>
+</FlowCallout>
+
+COMMON USE CASES
+----------------
+1. Centralized security policies (authentication, authorization)
+2. Common transformation logic
+3. Logging and monitoring standards
+4. Error handling templates
+5. Rate limiting patterns
+6. Data validation rules
+7. API key verification
+8. OAuth token validation
+
+ERROR CODES
+-----------
+- 404: Shared flow not found
+- 403: Permission denied
+- 409: Deployment conflict
+- 400: Invalid bundle structure
+
+BEST PRACTICES
+--------------
+- Use shared flows for common policies
+- Version shared flows independently
+- Test shared flows in isolation
+- Document shared flow inputs/outputs
+- Use descriptive names
+- Deploy to all environments where used
+- Monitor shared flow performance impact
+- Keep shared flows focused and single-purpose
+
+NOTES
+-----
+- Shared flows can call other shared flows (avoid circular refs)
+- Deployed revisions cannot be deleted
+- Changes require new revision and redeployment
+- Shared flow context is separate from proxy context
+- Variables can be passed to/from shared flows
+- Maximum nesting depth: 5 levels

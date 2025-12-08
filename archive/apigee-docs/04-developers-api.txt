@@ -1,0 +1,233 @@
+DEVELOPERS API
+===============
+Timestamp: 2025-12-08_21-42-21_UTC
+Resource: developers
+
+Base Path: /v1/organizations/{organizationId}/developers/{developerId}
+
+DESCRIPTION
+-----------
+Developers are entities that consume APIs. Each developer can have multiple apps
+and can be associated with API products through those apps.
+
+OPERATIONS
+----------
+
+1. LIST /v1/organizations/{org}/developers
+   Description: Lists all developers
+   Parameters:
+     - org (path, required): Organization ID
+     - count (query, optional): Number of results per page
+     - expand (query, optional): Include detailed info
+     - ids (query, optional): Filter by developer IDs
+     - startKey (query, optional): Pagination start key
+   Response: List of developer objects
+
+2. GET /v1/organizations/{org}/developers/{developer}
+   Description: Gets developer details
+   Parameters:
+     - org (path, required): Organization ID
+     - developer (path, required): Developer email or ID
+     - action (query, optional): Details action
+   Response: Developer object
+
+3. CREATE /v1/organizations/{org}/developers
+   Description: Creates a new developer
+   Method: POST
+   Parameters:
+     - org (path, required): Organization ID
+   Request Body: Developer object
+   Response: Created developer object
+
+4. UPDATE /v1/organizations/{org}/developers/{developer}
+   Description: Updates developer information
+   Method: PUT
+   Parameters:
+     - org (path, required): Organization ID
+     - developer (path, required): Developer email or ID
+   Request Body: Developer object
+   Response: Updated developer object
+
+5. DELETE /v1/organizations/{org}/developers/{developer}
+   Description: Deletes a developer
+   Parameters:
+     - org (path, required): Organization ID
+     - developer (path, required): Developer email or ID
+   Response: Developer object
+
+6. SET_STATUS /v1/organizations/{org}/developers/{developer}
+   Description: Sets developer status (active/inactive)
+   Method: POST with action query param
+   Parameters:
+     - org (path, required): Organization ID
+     - developer (path, required): Developer email or ID
+     - action (query, required): active or inactive
+   Response: Empty response
+
+RESOURCE SCHEMA
+---------------
+{
+  "email": "string",                   // Developer email (unique, immutable)
+  "firstName": "string",               // First name
+  "lastName": "string",                // Last name
+  "userName": "string",                // Username
+  "organizationName": "string",        // Organization name
+  "status": "string",                  // active or inactive
+  "attributes": [{                     // Custom attributes
+    "name": "string",
+    "value": "string"
+  }],
+  "developerId": "string",             // Developer ID (auto-generated)
+  "createdAt": "string",              // Creation timestamp
+  "createdBy": "string",              // Creator email
+  "lastModifiedAt": "string",         // Last modified timestamp
+  "lastModifiedBy": "string",         // Last modifier email
+  "apps": ["string"],                 // List of app names
+  "companies": ["string"],            // Associated companies
+  "accessType": "string",             // Access type
+  "appFamily": "string"               // App family
+}
+
+DEVELOPER APPS OPERATIONS
+--------------------------
+
+7. LIST /v1/organizations/{org}/developers/{developer}/apps
+   Description: Lists apps for a developer
+   Parameters:
+     - org (path, required): Organization ID
+     - developer (path, required): Developer email or ID
+     - count (query, optional): Results per page
+     - expand (query, optional): Include details
+     - shallowExpand (query, optional): Include basic details
+     - startKey (query, optional): Pagination start
+   Response: List of app objects
+
+8. GET /v1/organizations/{org}/developers/{developer}/apps/{app}
+   Description: Gets developer app details
+   Parameters:
+     - org (path, required): Organization ID
+     - developer (path, required): Developer email or ID
+     - app (path, required): App name
+   Response: Developer app object
+
+9. CREATE /v1/organizations/{org}/developers/{developer}/apps
+   Description: Creates a developer app
+   Method: POST
+   Parameters:
+     - org (path, required): Organization ID
+     - developer (path, required): Developer email or ID
+   Request Body: Developer app object
+   Response: Created app object
+
+10. UPDATE /v1/organizations/{org}/developers/{developer}/apps/{app}
+    Description: Updates a developer app
+    Method: PUT
+    Parameters:
+      - org (path, required): Organization ID
+      - developer (path, required): Developer email or ID
+      - app (path, required): App name
+    Request Body: Developer app object
+    Response: Updated app object
+
+11. DELETE /v1/organizations/{org}/developers/{developer}/apps/{app}
+    Description: Deletes a developer app
+    Parameters:
+      - org (path, required): Organization ID
+      - developer (path, required): Developer email or ID
+      - app (path, required): App name
+    Response: Developer app object
+
+DEVELOPER ATTRIBUTES
+--------------------
+
+12. GET /v1/organizations/{org}/developers/{developer}/attributes
+    Description: Lists developer attributes
+    Parameters:
+      - org (path, required): Organization ID
+      - developer (path, required): Developer email or ID
+    Response: List of attributes
+
+13. UPDATE /v1/organizations/{org}/developers/{developer}/attributes/{attribute}
+    Description: Updates or creates an attribute
+    Method: POST
+    Parameters:
+      - org (path, required): Organization ID
+      - developer (path, required): Developer email or ID
+      - attribute (path, required): Attribute name
+    Request Body: Attribute object
+    Response: Attribute object
+
+14. DELETE /v1/organizations/{org}/developers/{developer}/attributes/{attribute}
+    Description: Deletes an attribute
+    Parameters:
+      - org (path, required): Organization ID
+      - developer (path, required): Developer email or ID
+      - attribute (path, required): Attribute name
+    Response: Attribute object
+
+EXAMPLES
+--------
+List developers:
+  GET /v1/organizations/my-org/developers
+
+Create developer:
+  POST /v1/organizations/my-org/developers
+  {
+    "email": "dev@example.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "userName": "jdoe",
+    "attributes": [
+      {"name": "department", "value": "Engineering"}
+    ]
+  }
+
+Get developer:
+  GET /v1/organizations/my-org/developers/dev@example.com
+
+Update developer:
+  PUT /v1/organizations/my-org/developers/dev@example.com
+  {
+    "firstName": "Jane",
+    "lastName": "Smith"
+  }
+
+Set developer status:
+  POST /v1/organizations/my-org/developers/dev@example.com?action=inactive
+
+List developer apps:
+  GET /v1/organizations/my-org/developers/dev@example.com/apps
+
+Delete developer:
+  DELETE /v1/organizations/my-org/developers/dev@example.com
+
+COMMON USE CASES
+----------------
+1. Developer onboarding and registration
+2. Managing developer profiles
+3. Tracking developer apps and API usage
+4. Activating/deactivating developer access
+5. Custom attribute management
+
+ERROR CODES
+-----------
+- 404: Developer not found
+- 403: Permission denied
+- 409: Developer already exists (email conflict)
+- 400: Invalid email or required fields missing
+
+BEST PRACTICES
+--------------
+- Use email as primary identifier
+- Validate email format before creation
+- Use attributes for custom metadata
+- Implement developer approval workflows
+- Monitor developer activity
+- Provide self-service developer portal
+
+NOTES
+-----
+- Email is unique and immutable
+- Deleting developer also deletes associated apps
+- Inactive developers cannot create new apps
+- Developer status affects all associated apps

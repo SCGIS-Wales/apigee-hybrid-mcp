@@ -1,0 +1,87 @@
+Apigee Hybrid API Documentation Archive
+=========================================
+Scraped: 2025-12-08_21-42-21_UTC
+Source: https://docs.cloud.google.com/apigee/docs/reference/apis/apigee/rest
+API Version: v1
+
+This archive contains comprehensive documentation of all Apigee Hybrid REST API endpoints.
+The documentation is organized by resource type and includes all available operations.
+
+TABLE OF CONTENTS
+=================
+1. Organizations API
+2. Environments API
+3. API Proxies API
+4. Deployments API
+5. Developers API
+6. Apps API
+7. API Products API
+8. Analytics API
+9. Keystores & Aliases API
+10. Target Servers API
+11. Virtual Hosts API
+12. KVM (Key Value Maps) API
+13. Caches API
+14. Resource Files API
+15. Shared Flows API
+16. Flow Hooks API
+17. References API
+18. Archive Deployments API
+19. Debug Sessions API
+20. Data Collectors API
+21. Reports API
+22. Queries API
+23. Result Views API
+24. Security Reports API
+25. Instance Attachments API
+26. Nat Addresses API
+27. Environment Groups API
+28. Endpoint Attachments API
+
+Base URL: https://apigee.googleapis.com/v1
+
+Authentication: OAuth 2.0 Bearer Token
+Required Scopes: https://www.googleapis.com/auth/cloud-platform
+
+All endpoints follow RESTful conventions:
+- GET: Retrieve resources
+- POST: Create resources
+- PUT: Update resources (full replacement)
+- PATCH: Update resources (partial update)
+- DELETE: Remove resources
+
+Standard query parameters:
+- pageSize: Number of items per page (default varies by resource)
+- pageToken: Token for pagination
+- filter: Filter expression
+- orderBy: Sort field and direction
+
+Standard response format:
+{
+  "resources": [...],
+  "nextPageToken": "string"
+}
+
+Error responses follow Google API error format:
+{
+  "error": {
+    "code": 400,
+    "message": "Error description",
+    "status": "INVALID_ARGUMENT"
+  }
+}
+
+Rate Limits:
+- Standard: 10 requests per second per project
+- Burst: Up to 100 requests in 10 seconds
+- Quota: Varies by resource type
+
+Retry Strategy:
+- Use exponential backoff for 429 (Too Many Requests) and 5xx errors
+- Recommended: 1s, 2s, 4s, 8s, 16s intervals
+- Maximum retries: 5
+
+============================================================
+Last Updated: 2025-12-08_21-42-21_UTC
+Version: 1.0
+============================================================
