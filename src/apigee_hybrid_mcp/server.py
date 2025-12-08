@@ -34,6 +34,12 @@ from mcp.types import Tool, TextContent
 
 from apigee_hybrid_mcp.api.client import ApigeeClient
 from apigee_hybrid_mcp.config import get_settings
+from apigee_hybrid_mcp.models.team import TeamCreate, TeamUpdate
+from apigee_hybrid_mcp.repository.team_repository import (
+    InMemoryTeamRepository,
+    TeamAlreadyExistsError,
+    TeamNotFoundError,
+)
 from apigee_hybrid_mcp.utils.logging import configure_logging, get_logger
 
 # Initialize logger
@@ -41,6 +47,9 @@ logger = get_logger(__name__)
 
 # Initialize MCP server
 app = Server("apigee-hybrid-mcp")
+
+# Initialize team repository (singleton for this server instance)
+team_repository = InMemoryTeamRepository()
 
 
 def create_tool_definition(
@@ -150,7 +159,7 @@ async def list_tools() -> List[Tool]:
         - API Products: Manage API product bundles
         - Shared Flows: Manage reusable policy flows
         - Keystores: Manage certificates and keys
-        - Companies: Manage teams and organizations
+        - Teams: Manage teams for organizational access
         - Debug Sessions: Trace and debug API requests
     """
     return [
@@ -751,63 +760,88 @@ async def list_tools() -> List[Tool]:
             },
         ),
         
-        # Companies (Teams) API
+        # Teams API (Note: Custom implementation for Hybrid - not a native Apigee API)
         create_tool_definition(
-            name="list-companies",
-            description="List all companies (teams) in an organization",
+            name="list-teams",
+            description="List all teams in the organization (custom implementation for Hybrid)",
             parameters={
                 "type": "object",
-                "properties": {
-                    "organization": {
-                        "type": "string",
-                        "description": "Organization ID",
-                    },
-                    "expand": {
-                        "type": "boolean",
-                        "description": "Include detailed information",
-                    },
-                },
-                "required": ["organization"],
+                "properties": {},
+                "required": [],
             },
         ),
         create_tool_definition(
-            name="get-company",
-            description="Get details of a specific company (team)",
+            name="get-team",
+            description="Get details of a specific team",
             parameters={
                 "type": "object",
                 "properties": {
-                    "organization": {
+                    "team_id": {
                         "type": "string",
-                        "description": "Organization ID",
-                    },
-                    "company": {
-                        "type": "string",
-                        "description": "Company name",
+                        "description": "Team ID",
                     },
                 },
-                "required": ["organization", "company"],
+                "required": ["team_id"],
             },
         ),
         create_tool_definition(
-            name="create-company",
-            description="Create a new company (team)",
+            name="create-team",
+            description="Create a new team",
             parameters={
                 "type": "object",
                 "properties": {
-                    "organization": {
-                        "type": "string",
-                        "description": "Organization ID",
-                    },
                     "name": {
                         "type": "string",
-                        "description": "Company name (required, immutable)",
+                        "description": "Team name (unique, alphanumeric with hyphens/underscores)",
                     },
-                    "displayName": {
+                    "description": {
                         "type": "string",
-                        "description": "Display name",
+                        "description": "Team description",
+                    },
+                    "members": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "List of team member identifiers (emails or user IDs)",
                     },
                 },
-                "required": ["organization", "name"],
+                "required": ["name"],
+            },
+        ),
+        create_tool_definition(
+            name="update-team",
+            description="Update an existing team",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "team_id": {
+                        "type": "string",
+                        "description": "Team ID",
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Updated team description",
+                    },
+                    "members": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Updated list of team members",
+                    },
+                },
+                "required": ["team_id"],
+            },
+        ),
+        create_tool_definition(
+            name="delete-team",
+            description="Delete a team",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "team_id": {
+                        "type": "string",
+                        "description": "Team ID",
+                    },
+                },
+                "required": ["team_id"],
             },
         ),
         
@@ -1125,28 +1159,93 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 return format_api_response(data, f"Get Keystore Alias: {alias}")
                 
             # Companies (Teams) API
-            elif name == "list-companies":
-                org = arguments.get("organization", settings.apigee_organization)
-                params = {}
-                if arguments.get("expand"):
-                    params["expand"] = "true"
-                data = await client.get("companies", params=params)
-                return format_api_response(data, "List Companies")
+            # Teams API (Custom implementation for Hybrid)
+            elif name == "list-teams":
+                try:
+                    teams = await team_repository.list_all()
+                    teams_data = {"teams": [team.to_dict() for team in teams]}
+                    return format_api_response(teams_data, "List Teams")
+                except Exception as e:
+                    return handle_api_error(e, "List Teams")
                 
-            elif name == "get-company":
-                org = arguments.get("organization", settings.apigee_organization)
-                company = arguments["company"]
-                data = await client.get(f"companies/{company}")
-                return format_api_response(data, f"Get Company: {company}")
+            elif name == "get-team":
+                try:
+                    team_id = arguments["team_id"]
+                    team = await team_repository.get_by_id(team_id)
+                    if not team:
+                        return [
+                            TextContent(
+                                type="text", text=f"Error: Team not found: {team_id}"
+                            )
+                        ]
+                    return format_api_response(team.to_dict(), f"Get Team: {team_id}")
+                except Exception as e:
+                    return handle_api_error(e, "Get Team")
                 
-            elif name == "create-company":
-                org = arguments.get("organization", settings.apigee_organization)
-                company_data = {
-                    "name": arguments["name"],
-                    "displayName": arguments.get("displayName", arguments["name"]),
-                }
-                data = await client.post("companies", json_data=company_data)
-                return format_api_response(data, "Create Company")
+            elif name == "create-team":
+                try:
+                    team_create = TeamCreate(
+                        name=arguments["name"],
+                        description=arguments.get("description"),
+                        members=arguments.get("members", []),
+                    )
+                    team = await team_repository.create(team_create)
+                    return format_api_response(team.to_dict(), "Create Team")
+                except TeamAlreadyExistsError as e:
+                    return [
+                        TextContent(
+                            type="text",
+                            text=f"Error (409 Conflict): Team already exists: {e.team_name}",
+                        )
+                    ]
+                except ValueError as e:
+                    return [
+                        TextContent(type="text", text=f"Error (400 Bad Request): {str(e)}")
+                    ]
+                except Exception as e:
+                    return handle_api_error(e, "Create Team")
+                
+            elif name == "update-team":
+                try:
+                    team_id = arguments["team_id"]
+                    team_update = TeamUpdate(
+                        description=arguments.get("description"),
+                        members=arguments.get("members"),
+                    )
+                    team = await team_repository.update(team_id, team_update)
+                    return format_api_response(team.to_dict(), f"Update Team: {team_id}")
+                except TeamNotFoundError as e:
+                    return [
+                        TextContent(
+                            type="text", text=f"Error (404 Not Found): Team not found: {e.team_id}"
+                        )
+                    ]
+                except ValueError as e:
+                    return [
+                        TextContent(type="text", text=f"Error (400 Bad Request): {str(e)}")
+                    ]
+                except Exception as e:
+                    return handle_api_error(e, "Update Team")
+                
+            elif name == "delete-team":
+                try:
+                    team_id = arguments["team_id"]
+                    deleted = await team_repository.delete(team_id)
+                    if deleted:
+                        return [
+                            TextContent(
+                                type="text",
+                                text=f"Operation: Delete Team\n\nTeam {team_id} deleted successfully",
+                            )
+                        ]
+                    else:
+                        return [
+                            TextContent(
+                                type="text", text=f"Error (404 Not Found): Team not found: {team_id}"
+                            )
+                        ]
+                except Exception as e:
+                    return handle_api_error(e, "Delete Team")
                 
             # Debug Sessions (Trace) API
             elif name == "create-debug-session":
