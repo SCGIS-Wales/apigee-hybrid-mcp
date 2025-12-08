@@ -10,7 +10,6 @@ Tests cover:
 
 import pytest
 from datetime import datetime
-from typing import List
 
 from apigee_hybrid_mcp.teams.models import Team
 from apigee_hybrid_mcp.teams.repository import (
@@ -61,7 +60,7 @@ class TestTeamModel:
         # Empty string is caught by Pydantic's min_length
         with pytest.raises(Exception):  # ValidationError or ValueError
             Team(id="test-id", name="")
-        
+
         # Whitespace strings pass min_length but fail custom validator
         whitespace_names = ["   ", "\t", "\n"]
         for name in whitespace_names:
@@ -217,7 +216,7 @@ class TestInMemoryTeamRepository:
 
     async def test_update_team_name_conflict(self, repository: InMemoryTeamRepository) -> None:
         """Test updating team name to existing name fails."""
-        team1 = await repository.create_team(name="team1")
+        await repository.create_team(name="team1")
         team2 = await repository.create_team(name="team2")
 
         with pytest.raises(TeamAlreadyExistsError) as exc_info:
@@ -255,7 +254,7 @@ class TestInMemoryTeamRepository:
     async def test_concurrent_operations(self, repository: InMemoryTeamRepository) -> None:
         """Test repository handles multiple operations correctly."""
         # Create multiple teams
-        team1 = await repository.create_team(name="team1", members=["user1@example.com"])
+        await repository.create_team(name="team1", members=["user1@example.com"])
         team2 = await repository.create_team(name="team2", members=["user2@example.com"])
         team3 = await repository.create_team(name="team3", members=["user3@example.com"])
 

@@ -13,11 +13,11 @@ Environment Variables:
 
 Example:
     from apigee_hybrid_mcp.config import get_settings
-    
+
     settings = get_settings()
     print(f"Organization: {settings.apigee_organization}")
 """
-import os
+
 from typing import Optional
 
 from pydantic import Field
@@ -26,7 +26,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     """Application settings with environment variable support.
-    
+
     This class uses Pydantic for type-safe configuration management.
     All settings can be overridden via environment variables with
     the APIGEE_MCP_ prefix.
@@ -41,7 +41,7 @@ class Settings(BaseSettings):
         default=None,
         description="Path to Google Cloud service account credentials JSON file",
     )
-    
+
     # Apigee Configuration
     apigee_organization: str = Field(
         default="",
@@ -51,7 +51,7 @@ class Settings(BaseSettings):
         default="https://apigee.googleapis.com/v1",
         description="Apigee API base URL (default: v1 REST API)",
     )
-    
+
     # Server Configuration
     server_host: str = Field(
         default="0.0.0.0",
@@ -65,7 +65,7 @@ class Settings(BaseSettings):
         default="INFO",
         description="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
     )
-    
+
     # Resilience Configuration
     max_retries: int = Field(
         default=3,
@@ -87,7 +87,7 @@ class Settings(BaseSettings):
         default=60,
         description="Circuit breaker timeout in seconds before retry",
     )
-    
+
     # Rate Limiting
     rate_limit_requests: int = Field(
         default=100,
@@ -100,6 +100,7 @@ class Settings(BaseSettings):
 
     class Config:
         """Pydantic configuration."""
+
         env_prefix = "APIGEE_MCP_"
         case_sensitive = False
         env_file = ".env"
@@ -108,13 +109,13 @@ class Settings(BaseSettings):
 
 def get_settings() -> Settings:
     """Get application settings instance.
-    
+
     This function creates and returns a configured Settings object.
     Settings are loaded from environment variables and .env file.
-    
+
     Returns:
         Settings: Configured settings instance with all parameters
-        
+
     Example:
         >>> settings = get_settings()
         >>> print(settings.apigee_organization)

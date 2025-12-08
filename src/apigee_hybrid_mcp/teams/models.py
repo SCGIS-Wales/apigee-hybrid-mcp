@@ -102,4 +102,3 @@ class Team(BaseModel):
                 raise ValueError(f"Invalid email address: {email}")
 
         return value
-

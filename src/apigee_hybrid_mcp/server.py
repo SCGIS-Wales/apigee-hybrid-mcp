@@ -19,14 +19,14 @@ Main Components:
 
 Example Usage:
     from apigee_hybrid_mcp.server import main
-    
+
     if __name__ == "__main__":
         main()
 """
 
 import asyncio
 import json
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
@@ -57,18 +57,18 @@ def create_tool_definition(
     parameters: Dict[str, Any],
 ) -> Tool:
     """Create an MCP tool definition.
-    
+
     This is a pure function that constructs a Tool object with the given
     parameters. It follows MCP specifications for tool definitions.
-    
+
     Args:
         name: Unique tool identifier (kebab-case recommended)
         description: Human-readable description of what the tool does
         parameters: JSON Schema object defining the tool's parameters
-        
+
     Returns:
         Tool: MCP tool definition object
-        
+
     Example:
         >>> tool = create_tool_definition(
         ...     name="list-organizations",
@@ -88,17 +88,17 @@ def format_api_response(
     operation: str,
 ) -> List[TextContent]:
     """Format API response data for MCP text content.
-    
+
     Transforms API response dictionaries into MCP-compatible text content.
     Uses JSON formatting for readability.
-    
+
     Args:
         data: API response data dictionary
         operation: Description of the operation performed
-        
+
     Returns:
         List[TextContent]: Formatted response for MCP client
-        
+
     Example:
         >>> response = {"name": "org-1", "displayName": "Organization 1"}
         >>> content = format_api_response(response, "Get Organization")
@@ -116,17 +116,17 @@ def format_api_response(
 
 def handle_api_error(error: Exception, operation: str) -> List[TextContent]:
     """Handle API errors and format error messages.
-    
+
     Provides consistent error handling and formatting across all tools.
     Logs errors and returns user-friendly error messages.
-    
+
     Args:
         error: The exception that occurred
         operation: Description of the failed operation
-        
+
     Returns:
         List[TextContent]: Formatted error message for MCP client
-        
+
     Example:
         >>> try:
         ...     # API call
@@ -142,13 +142,13 @@ def handle_api_error(error: Exception, operation: str) -> List[TextContent]:
 @app.list_tools()
 async def list_tools() -> List[Tool]:
     """List all available MCP tools for Apigee Hybrid.
-    
+
     This handler returns the complete list of tools exposed by the MCP server.
     Each tool corresponds to one or more Apigee API operations.
-    
+
     Returns:
         List[Tool]: All available tools with their definitions
-        
+
     Tool Categories:
         - Organizations: Manage Apigee organizations
         - Environments: Manage deployment environments
@@ -186,7 +186,6 @@ async def list_tools() -> List[Tool]:
                 "required": ["organization"],
             },
         ),
-        
         # Environments API
         create_tool_definition(
             name="list-environments",
@@ -251,7 +250,6 @@ async def list_tools() -> List[Tool]:
                 "required": ["organization", "name"],
             },
         ),
-        
         # API Proxies API
         create_tool_definition(
             name="list-api-proxies",
@@ -367,7 +365,6 @@ async def list_tools() -> List[Tool]:
                 "required": ["organization", "environment", "proxy", "revision"],
             },
         ),
-        
         # Developers API
         create_tool_definition(
             name="list-developers",
@@ -435,7 +432,6 @@ async def list_tools() -> List[Tool]:
                 "required": ["organization", "email", "firstName", "lastName"],
             },
         ),
-        
         # Developer Apps API
         create_tool_definition(
             name="list-developer-apps",
@@ -512,7 +508,6 @@ async def list_tools() -> List[Tool]:
                 "required": ["organization", "developer", "name"],
             },
         ),
-        
         # API Products API
         create_tool_definition(
             name="list-api-products",
@@ -604,7 +599,6 @@ async def list_tools() -> List[Tool]:
                 "required": ["organization", "name"],
             },
         ),
-        
         # Shared Flows API
         create_tool_definition(
             name="list-shared-flows",
@@ -668,7 +662,6 @@ async def list_tools() -> List[Tool]:
                 "required": ["organization", "environment", "sharedFlow", "revision"],
             },
         ),
-        
         # Keystores API
         create_tool_definition(
             name="list-keystores",
@@ -758,7 +751,6 @@ async def list_tools() -> List[Tool]:
                 "required": ["organization", "environment", "keystore", "alias"],
             },
         ),
-        
         # Companies (Teams) API - DEPRECATED for Hybrid (use Teams API instead)
         create_tool_definition(
             name="list-companies",
@@ -818,7 +810,6 @@ async def list_tools() -> List[Tool]:
                 "required": ["organization", "name"],
             },
         ),
-        
         # Teams API (Replaces Companies for Hybrid)
         create_tool_definition(
             name="list-teams",
@@ -907,7 +898,6 @@ async def list_tools() -> List[Tool]:
                 "required": ["team_id"],
             },
         ),
-        
         # Debug Sessions (Trace) API
         create_tool_definition(
             name="create-debug-session",
@@ -979,21 +969,21 @@ async def list_tools() -> List[Tool]:
 @app.call_tool()
 async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
     """Handle MCP tool calls and route to appropriate Apigee API operations.
-    
+
     This is the main tool call handler that routes requests to the appropriate
     API functions based on the tool name. It manages the API client lifecycle
     and error handling.
-    
+
     Args:
         name: Tool name (as defined in list_tools)
         arguments: Tool arguments dictionary (validated against input schema)
-        
+
     Returns:
         List[TextContent]: Formatted API response or error message
-        
+
     Raises:
         ValueError: If tool name is not recognized
-        
+
     Implementation Notes:
         - Uses async context manager for API client lifecycle
         - All errors are caught and formatted consistently
@@ -1001,7 +991,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
         - API client handles retries and circuit breaking
     """
     settings = get_settings()
-    
+
     try:
         async with ApigeeClient(settings) as client:
             # Organizations API
@@ -1009,19 +999,19 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 org = arguments.get("organization", settings.apigee_organization)
                 data = await client.get(f"organizations/{org}")
                 return format_api_response(data, "Get Organization")
-                
+
             # Environments API
             elif name == "list-environments":
                 org = arguments.get("organization", settings.apigee_organization)
-                data = await client.get(f"environments")
+                data = await client.get("environments")
                 return format_api_response(data, "List Environments")
-                
+
             elif name == "get-environment":
                 org = arguments.get("organization", settings.apigee_organization)
                 env = arguments["environment"]
                 data = await client.get(f"environments/{env}")
                 return format_api_response(data, f"Get Environment: {env}")
-                
+
             elif name == "create-environment":
                 org = arguments.get("organization", settings.apigee_organization)
                 env_data = {
@@ -1032,7 +1022,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 }
                 data = await client.post("environments", json_data=env_data)
                 return format_api_response(data, "Create Environment")
-                
+
             # API Proxies API
             elif name == "list-api-proxies":
                 org = arguments.get("organization", settings.apigee_organization)
@@ -1041,20 +1031,22 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     params["includeRevisions"] = "true"
                 data = await client.get("apis", params=params)
                 return format_api_response(data, "List API Proxies")
-                
+
             elif name == "get-api-proxy":
                 org = arguments.get("organization", settings.apigee_organization)
                 proxy = arguments["proxy"]
                 data = await client.get(f"apis/{proxy}")
                 return format_api_response(data, f"Get API Proxy: {proxy}")
-                
+
             elif name == "get-api-proxy-revision":
                 org = arguments.get("organization", settings.apigee_organization)
                 proxy = arguments["proxy"]
                 revision = arguments["revision"]
                 data = await client.get(f"apis/{proxy}/revisions/{revision}")
-                return format_api_response(data, f"Get API Proxy Revision: {proxy} (rev {revision})")
-                
+                return format_api_response(
+                    data, f"Get API Proxy Revision: {proxy} (rev {revision})"
+                )
+
             elif name == "deploy-api-proxy":
                 org = arguments.get("organization", settings.apigee_organization)
                 env = arguments["environment"]
@@ -1067,8 +1059,10 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     f"environments/{env}/apis/{proxy}/revisions/{revision}/deployments",
                     params=params,
                 )
-                return format_api_response(data, f"Deploy API Proxy: {proxy} rev {revision} to {env}")
-                
+                return format_api_response(
+                    data, f"Deploy API Proxy: {proxy} rev {revision} to {env}"
+                )
+
             elif name == "undeploy-api-proxy":
                 org = arguments.get("organization", settings.apigee_organization)
                 env = arguments["environment"]
@@ -1077,8 +1071,10 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 data = await client.delete(
                     f"environments/{env}/apis/{proxy}/revisions/{revision}/deployments"
                 )
-                return format_api_response(data, f"Undeploy API Proxy: {proxy} rev {revision} from {env}")
-                
+                return format_api_response(
+                    data, f"Undeploy API Proxy: {proxy} rev {revision} from {env}"
+                )
+
             # Developers API
             elif name == "list-developers":
                 org = arguments.get("organization", settings.apigee_organization)
@@ -1087,13 +1083,13 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     params["expand"] = "true"
                 data = await client.get("developers", params=params)
                 return format_api_response(data, "List Developers")
-                
+
             elif name == "get-developer":
                 org = arguments.get("organization", settings.apigee_organization)
                 developer = arguments["developer"]
                 data = await client.get(f"developers/{developer}")
                 return format_api_response(data, f"Get Developer: {developer}")
-                
+
             elif name == "create-developer":
                 org = arguments.get("organization", settings.apigee_organization)
                 dev_data = {
@@ -1104,7 +1100,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 }
                 data = await client.post("developers", json_data=dev_data)
                 return format_api_response(data, "Create Developer")
-                
+
             # Developer Apps API
             elif name == "list-developer-apps":
                 org = arguments.get("organization", settings.apigee_organization)
@@ -1114,14 +1110,14 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     params["expand"] = "true"
                 data = await client.get(f"developers/{developer}/apps", params=params)
                 return format_api_response(data, f"List Developer Apps: {developer}")
-                
+
             elif name == "get-developer-app":
                 org = arguments.get("organization", settings.apigee_organization)
                 developer = arguments["developer"]
                 app = arguments["app"]
                 data = await client.get(f"developers/{developer}/apps/{app}")
                 return format_api_response(data, f"Get Developer App: {app}")
-                
+
             elif name == "create-developer-app":
                 org = arguments.get("organization", settings.apigee_organization)
                 developer = arguments["developer"]
@@ -1133,7 +1129,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     app_data["callbackUrl"] = arguments["callbackUrl"]
                 data = await client.post(f"developers/{developer}/apps", json_data=app_data)
                 return format_api_response(data, "Create Developer App")
-                
+
             # API Products API
             elif name == "list-api-products":
                 org = arguments.get("organization", settings.apigee_organization)
@@ -1142,13 +1138,13 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     params["expand"] = "true"
                 data = await client.get("apiproducts", params=params)
                 return format_api_response(data, "List API Products")
-                
+
             elif name == "get-api-product":
                 org = arguments.get("organization", settings.apigee_organization)
                 product = arguments["product"]
                 data = await client.get(f"apiproducts/{product}")
                 return format_api_response(data, f"Get API Product: {product}")
-                
+
             elif name == "create-api-product":
                 org = arguments.get("organization", settings.apigee_organization)
                 product_data = {
@@ -1166,7 +1162,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     product_data["quotaTimeUnit"] = arguments.get("quotaTimeUnit", "day")
                 data = await client.post("apiproducts", json_data=product_data)
                 return format_api_response(data, "Create API Product")
-                
+
             # Shared Flows API
             elif name == "list-shared-flows":
                 org = arguments.get("organization", settings.apigee_organization)
@@ -1175,13 +1171,13 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     params["includeRevisions"] = "true"
                 data = await client.get("sharedflows", params=params)
                 return format_api_response(data, "List Shared Flows")
-                
+
             elif name == "get-shared-flow":
                 org = arguments.get("organization", settings.apigee_organization)
                 sharedflow = arguments["sharedFlow"]
                 data = await client.get(f"sharedflows/{sharedflow}")
                 return format_api_response(data, f"Get Shared Flow: {sharedflow}")
-                
+
             elif name == "deploy-shared-flow":
                 org = arguments.get("organization", settings.apigee_organization)
                 env = arguments["environment"]
@@ -1190,29 +1186,31 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 data = await client.post(
                     f"environments/{env}/sharedflows/{sharedflow}/revisions/{revision}/deployments"
                 )
-                return format_api_response(data, f"Deploy Shared Flow: {sharedflow} rev {revision} to {env}")
-                
+                return format_api_response(
+                    data, f"Deploy Shared Flow: {sharedflow} rev {revision} to {env}"
+                )
+
             # Keystores API
             elif name == "list-keystores":
                 org = arguments.get("organization", settings.apigee_organization)
                 env = arguments["environment"]
                 data = await client.get(f"environments/{env}/keystores")
                 return format_api_response(data, f"List Keystores in {env}")
-                
+
             elif name == "get-keystore":
                 org = arguments.get("organization", settings.apigee_organization)
                 env = arguments["environment"]
                 keystore = arguments["keystore"]
                 data = await client.get(f"environments/{env}/keystores/{keystore}")
                 return format_api_response(data, f"Get Keystore: {keystore}")
-                
+
             elif name == "list-keystore-aliases":
                 org = arguments.get("organization", settings.apigee_organization)
                 env = arguments["environment"]
                 keystore = arguments["keystore"]
                 data = await client.get(f"environments/{env}/keystores/{keystore}/aliases")
                 return format_api_response(data, f"List Keystore Aliases: {keystore}")
-                
+
             elif name == "get-keystore-alias":
                 org = arguments.get("organization", settings.apigee_organization)
                 env = arguments["environment"]
@@ -1220,7 +1218,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 alias = arguments["alias"]
                 data = await client.get(f"environments/{env}/keystores/{keystore}/aliases/{alias}")
                 return format_api_response(data, f"Get Keystore Alias: {alias}")
-                
+
             # Companies (Teams) API - DEPRECATED
             elif name == "list-companies":
                 org = arguments.get("organization", settings.apigee_organization)
@@ -1229,13 +1227,15 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     params["expand"] = "true"
                 data = await client.get("companies", params=params)
                 return format_api_response(data, "List Companies [DEPRECATED - Use list-teams]")
-                
+
             elif name == "get-company":
                 org = arguments.get("organization", settings.apigee_organization)
                 company = arguments["company"]
                 data = await client.get(f"companies/{company}")
-                return format_api_response(data, f"Get Company: {company} [DEPRECATED - Use get-team]")
-                
+                return format_api_response(
+                    data, f"Get Company: {company} [DEPRECATED - Use get-team]"
+                )
+
             elif name == "create-company":
                 org = arguments.get("organization", settings.apigee_organization)
                 company_data = {
@@ -1244,13 +1244,13 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 }
                 data = await client.post("companies", json_data=company_data)
                 return format_api_response(data, "Create Company [DEPRECATED - Use create-team]")
-                
+
             # Teams API (Local management, not Apigee API)
             elif name == "list-teams":
                 teams = await _team_repository.list_teams()
                 data = {"teams": [team.model_dump() for team in teams]}
                 return format_api_response(data, "List Teams")
-                
+
             elif name == "get-team":
                 team_id = arguments["team_id"]
                 try:
@@ -1258,7 +1258,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     return format_api_response(team.model_dump(), f"Get Team: {team_id}")
                 except TeamNotFoundError as e:
                     return [TextContent(type="text", text=f"Error: {str(e)}")]
-                
+
             elif name == "create-team":
                 try:
                     team = await _team_repository.create_team(
@@ -1271,7 +1271,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     return [TextContent(type="text", text=f"Error: {str(e)}")]
                 except ValueError as e:
                     return [TextContent(type="text", text=f"Validation Error: {str(e)}")]
-                
+
             elif name == "update-team":
                 team_id = arguments["team_id"]
                 try:
@@ -1286,7 +1286,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     return [TextContent(type="text", text=f"Error: {str(e)}")]
                 except ValueError as e:
                     return [TextContent(type="text", text=f"Validation Error: {str(e)}")]
-                
+
             elif name == "delete-team":
                 team_id = arguments["team_id"]
                 try:
@@ -1294,7 +1294,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     return [TextContent(type="text", text=f"Team deleted successfully: {team_id}")]
                 except TeamNotFoundError as e:
                     return [TextContent(type="text", text=f"Error: {str(e)}")]
-                
+
             # Debug Sessions (Trace) API
             elif name == "create-debug-session":
                 org = arguments.get("organization", settings.apigee_organization)
@@ -1310,7 +1310,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     params=params,
                 )
                 return format_api_response(data, f"Create Debug Session: {session}")
-                
+
             elif name == "get-debug-session-data":
                 org = arguments.get("organization", settings.apigee_organization)
                 env = arguments["environment"]
@@ -1321,43 +1321,43 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     f"environments/{env}/apis/{proxy}/revisions/{revision}/debugsessions/{session}/data"
                 )
                 return format_api_response(data, f"Get Debug Session Data: {session}")
-                
+
             else:
                 raise ValueError(f"Unknown tool: {name}")
-                
+
     except Exception as e:
         return handle_api_error(e, name)
 
 
 def main() -> None:
     """Main entry point for the Apigee Hybrid MCP server.
-    
+
     Initializes logging, configures the server, and starts the MCP
     stdio server for communication with MCP clients.
-    
+
     This function:
         1. Loads configuration from environment
         2. Configures structured logging
         3. Starts the MCP server via stdio transport
         4. Handles graceful shutdown
-        
+
     Example:
         Run from command line:
         $ python -m apigee_hybrid_mcp.server
-        
+
         Or programmatically:
         >>> from apigee_hybrid_mcp.server import main
         >>> main()
     """
     settings = get_settings()
     configure_logging(settings.log_level)
-    
+
     logger.info(
         "starting_mcp_server",
         organization=settings.apigee_organization,
         api_base_url=settings.apigee_api_base_url,
     )
-    
+
     async def run_server() -> None:
         """Async server runner."""
         async with stdio_server() as (read_stream, write_stream):
@@ -1366,7 +1366,7 @@ def main() -> None:
                 write_stream,
                 app.create_initialization_options(),
             )
-    
+
     try:
         asyncio.run(run_server())
     except KeyboardInterrupt:

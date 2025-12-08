@@ -70,7 +70,9 @@ class TeamRepository(ABC):
         pass
 
     @abstractmethod
-    async def create_team(self, name: str, description: str = "", members: Optional[List[str]] = None) -> Team:
+    async def create_team(
+        self, name: str, description: str = "", members: Optional[List[str]] = None
+    ) -> Team:
         """Create a new team.
 
         Args:
@@ -161,7 +163,9 @@ class InMemoryTeamRepository(TeamRepository):
 
         return self._teams[team_id]
 
-    async def create_team(self, name: str, description: str = "", members: Optional[List[str]] = None) -> Team:
+    async def create_team(
+        self, name: str, description: str = "", members: Optional[List[str]] = None
+    ) -> Team:
         """Create a new team.
 
         Args:
