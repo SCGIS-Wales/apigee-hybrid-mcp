@@ -8,14 +8,14 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from typing import AsyncGenerator, Dict, Any
 
-from apigee_hybrid_mcp.config import Settings, get_settings
+from apigee_hybrid_mcp.config import Settings
 from apigee_hybrid_mcp.api.client import ApigeeClient
 
 
 @pytest.fixture(scope="session")
 def test_settings() -> Settings:
     """Provide test settings with mock configuration.
-    
+
     Returns:
         Settings: Test configuration with dummy values
     """
@@ -33,7 +33,7 @@ def test_settings() -> Settings:
 @pytest.fixture
 def mock_credentials() -> MagicMock:
     """Mock Google Cloud credentials.
-    
+
     Returns:
         MagicMock: Mocked credentials with valid token
     """
@@ -44,31 +44,33 @@ def mock_credentials() -> MagicMock:
 
 
 @pytest.fixture
-async def mock_apigee_client(test_settings: Settings, mock_credentials: MagicMock) -> AsyncGenerator[ApigeeClient, None]:
+async def mock_apigee_client(
+    test_settings: Settings, mock_credentials: MagicMock
+) -> AsyncGenerator[ApigeeClient, None]:
     """Provide mocked Apigee API client.
-    
+
     Args:
         test_settings: Test configuration
         mock_credentials: Mocked credentials
-        
+
     Yields:
         ApigeeClient: Client with mocked HTTP session
     """
     with patch("apigee_hybrid_mcp.api.client.service_account"):
         client = ApigeeClient(test_settings)
         client.credentials = mock_credentials
-        
+
         # Mock aiohttp session
         mock_session = AsyncMock()
         client.session = mock_session
-        
+
         yield client
 
 
 @pytest.fixture
 def sample_organization() -> Dict[str, Any]:
     """Sample organization response data.
-    
+
     Returns:
         Dict: Organization data structure
     """
@@ -86,7 +88,7 @@ def sample_organization() -> Dict[str, Any]:
 @pytest.fixture
 def sample_environment() -> Dict[str, Any]:
     """Sample environment response data.
-    
+
     Returns:
         Dict: Environment data structure
     """
@@ -104,7 +106,7 @@ def sample_environment() -> Dict[str, Any]:
 @pytest.fixture
 def sample_api_proxy() -> Dict[str, Any]:
     """Sample API proxy response data.
-    
+
     Returns:
         Dict: API proxy data structure
     """
@@ -121,7 +123,7 @@ def sample_api_proxy() -> Dict[str, Any]:
 @pytest.fixture
 def sample_developer() -> Dict[str, Any]:
     """Sample developer response data.
-    
+
     Returns:
         Dict: Developer data structure
     """
@@ -141,7 +143,7 @@ def sample_developer() -> Dict[str, Any]:
 @pytest.fixture
 def sample_developer_app() -> Dict[str, Any]:
     """Sample developer app response data.
-    
+
     Returns:
         Dict: Developer app data structure
     """
@@ -174,7 +176,7 @@ def sample_developer_app() -> Dict[str, Any]:
 @pytest.fixture
 def sample_api_product() -> Dict[str, Any]:
     """Sample API product response data.
-    
+
     Returns:
         Dict: API product data structure
     """
@@ -197,7 +199,7 @@ def sample_api_product() -> Dict[str, Any]:
 @pytest.fixture
 def sample_shared_flow() -> Dict[str, Any]:
     """Sample shared flow response data.
-    
+
     Returns:
         Dict: Shared flow data structure
     """
@@ -214,7 +216,7 @@ def sample_shared_flow() -> Dict[str, Any]:
 @pytest.fixture
 def sample_keystore() -> Dict[str, Any]:
     """Sample keystore response data.
-    
+
     Returns:
         Dict: Keystore data structure
     """
@@ -227,7 +229,7 @@ def sample_keystore() -> Dict[str, Any]:
 @pytest.fixture
 def sample_keystore_alias() -> Dict[str, Any]:
     """Sample keystore alias response data.
-    
+
     Returns:
         Dict: Keystore alias data structure
     """
@@ -254,7 +256,7 @@ def sample_keystore_alias() -> Dict[str, Any]:
 @pytest.fixture
 def sample_company() -> Dict[str, Any]:
     """Sample company (team) response data.
-    
+
     Returns:
         Dict: Company data structure
     """
@@ -272,7 +274,7 @@ def sample_company() -> Dict[str, Any]:
 @pytest.fixture
 def sample_debug_session() -> Dict[str, Any]:
     """Sample debug session response data.
-    
+
     Returns:
         Dict: Debug session data structure
     """
@@ -287,7 +289,7 @@ def sample_debug_session() -> Dict[str, Any]:
 @pytest.fixture
 def sample_trace_data() -> Dict[str, Any]:
     """Sample trace transaction data.
-    
+
     Returns:
         Dict: Trace data structure
     """
