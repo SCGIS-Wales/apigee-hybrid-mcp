@@ -1,0 +1,219 @@
+APPS API (Developer and Team Apps)
+====================================
+Timestamp: 2025-12-08_21-42-21_UTC
+Resource: apps
+
+Base Path: /v1/organizations/{organizationId}/apps
+
+DESCRIPTION
+-----------
+Apps represent client applications that consume APIs. Apps can be associated with
+developers or companies (teams). Each app has credentials (API keys) and is linked
+to API products.
+
+DEVELOPER APPS
+--------------
+Path: /v1/organizations/{org}/developers/{developer}/apps/{app}
+
+1. CREATE Developer App
+   POST /v1/organizations/{org}/developers/{developer}/apps
+   Request Body:
+   {
+     "name": "string",                 // App name (required)
+     "apiProducts": ["string"],        // API product names
+     "attributes": [{                  // Custom attributes
+       "name": "string",
+       "value": "string"
+     }],
+     "callbackUrl": "string",         // OAuth callback URL
+     "keyExpiresIn": "string",        // Credential expiry (milliseconds)
+     "scopes": ["string"]             // OAuth scopes
+   }
+
+2. GET Developer App
+   GET /v1/organizations/{org}/developers/{developer}/apps/{app}
+   Response includes credentials with API keys
+
+3. UPDATE Developer App
+   PUT /v1/organizations/{org}/developers/{developer}/apps/{app}
+   Updates app properties and API product associations
+
+4. DELETE Developer App
+   DELETE /v1/organizations/{org}/developers/{developer}/apps/{app}
+
+5. Generate API Key
+   POST /v1/organizations/{org}/developers/{developer}/apps/{app}/keys/create
+   Request Body:
+   {
+     "consumerKey": "string",         // Optional custom key
+     "consumerSecret": "string",      // Optional custom secret
+     "expiresInSeconds": "string"     // Expiry time
+   }
+
+6. Approve/Revoke API Key
+   POST /v1/organizations/{org}/developers/{developer}/apps/{app}/keys/{key}
+   ?action=approve|revoke
+
+COMPANY (TEAM) APPS
+-------------------
+Path: /v1/organizations/{org}/companies/{company}/apps/{app}
+
+1. CREATE Company App
+   POST /v1/organizations/{org}/companies/{company}/apps
+   Similar schema to developer apps
+
+2. GET Company App
+   GET /v1/organizations/{org}/companies/{company}/apps/{app}
+
+3. UPDATE Company App
+   PUT /v1/organizations/{org}/companies/{company}/apps/{app}
+
+4. DELETE Company App
+   DELETE /v1/organizations/{org}/companies/{company}/apps/{app}
+
+5. LIST Company Apps
+   GET /v1/organizations/{org}/companies/{company}/apps
+
+APP CREDENTIALS
+---------------
+
+Credential Schema:
+{
+  "consumerKey": "string",             // API key
+  "consumerSecret": "string",          // API secret
+  "status": "string",                  // approved, revoked, pending
+  "expiresAt": "string",              // Expiration timestamp
+  "issuedAt": "string",               // Issue timestamp
+  "apiProducts": [{                    // Associated products
+    "apiproduct": "string",
+    "status": "string"                 // approved, revoked, pending
+  }],
+  "scopes": ["string"],               // OAuth scopes
+  "attributes": [{
+    "name": "string",
+    "value": "string"
+  }]
+}
+
+CREDENTIAL OPERATIONS
+---------------------
+
+1. LIST Credentials
+   GET /v1/organizations/{org}/developers/{developer}/apps/{app}/keys
+
+2. GET Credential
+   GET /v1/organizations/{org}/developers/{developer}/apps/{app}/keys/{key}
+
+3. CREATE Credential
+   POST /v1/organizations/{org}/developers/{developer}/apps/{app}/keys/create
+
+4. DELETE Credential
+   DELETE /v1/organizations/{org}/developers/{developer}/apps/{app}/keys/{key}
+
+5. UPDATE Credential Products
+   POST /v1/organizations/{org}/developers/{developer}/apps/{app}/keys/{key}
+   Request Body:
+   {
+     "apiProducts": ["product1", "product2"]
+   }
+
+6. Approve/Revoke Product for Key
+   POST /v1/organizations/{org}/developers/{developer}/apps/{app}/keys/{key}/apiproducts/{product}
+   ?action=approve|revoke
+
+APP RESOURCE SCHEMA
+-------------------
+{
+  "name": "string",                    // App name
+  "appId": "string",                   // Auto-generated ID
+  "developerId": "string",             // Developer ID (for dev apps)
+  "companyName": "string",             // Company name (for company apps)
+  "status": "string",                  // approved, revoked
+  "apiProducts": ["string"],           // API products
+  "attributes": [{
+    "name": "string",
+    "value": "string"
+  }],
+  "callbackUrl": "string",
+  "createdAt": "string",
+  "createdBy": "string",
+  "credentials": [{                    // API credentials
+    "consumerKey": "string",
+    "consumerSecret": "string",
+    "status": "string",
+    "expiresAt": "string",
+    "apiProducts": [{
+      "apiproduct": "string",
+      "status": "string"
+    }]
+  }],
+  "lastModifiedAt": "string",
+  "lastModifiedBy": "string",
+  "scopes": ["string"]
+}
+
+EXAMPLES
+--------
+Create developer app:
+  POST /v1/organizations/my-org/developers/dev@example.com/apps
+  {
+    "name": "my-mobile-app",
+    "apiProducts": ["basic-product", "premium-product"],
+    "callbackUrl": "https://example.com/callback",
+    "attributes": [
+      {"name": "platform", "value": "iOS"}
+    ]
+  }
+
+Get app with credentials:
+  GET /v1/organizations/my-org/developers/dev@example.com/apps/my-mobile-app
+
+Revoke API key:
+  POST /v1/organizations/my-org/developers/dev@example.com/apps/my-mobile-app/keys/{key}?action=revoke
+
+Create company app:
+  POST /v1/organizations/my-org/companies/acme-corp/apps
+  {
+    "name": "enterprise-integration",
+    "apiProducts": ["enterprise-product"]
+  }
+
+Update app API products:
+  POST /v1/organizations/my-org/developers/dev@example.com/apps/my-app/keys/{key}
+  {
+    "apiProducts": ["product1", "product2", "product3"]
+  }
+
+COMMON USE CASES
+----------------
+1. App registration and API key management
+2. Associating apps with API products
+3. Credential rotation and expiry management
+4. OAuth client management
+5. Rate limiting and quota enforcement per app
+6. Analytics and monitoring by app
+
+ERROR CODES
+-----------
+- 404: App or credential not found
+- 403: Permission denied or product access denied
+- 409: App name already exists
+- 400: Invalid request or missing required fields
+
+BEST PRACTICES
+--------------
+- Rotate credentials regularly
+- Use appropriate expiry times for keys
+- Monitor app usage and enforce quotas
+- Implement approval workflows for apps
+- Use attributes for app categorization
+- Revoke credentials immediately on security incidents
+- Use different apps for different environments
+
+NOTES
+-----
+- App names must be unique per developer/company
+- Credentials are automatically generated if not provided
+- Revoking an app affects all its credentials
+- Deleting an app removes all credentials
+- API product association controls access

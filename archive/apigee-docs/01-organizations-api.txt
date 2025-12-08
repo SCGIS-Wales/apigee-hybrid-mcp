@@ -1,0 +1,101 @@
+ORGANIZATIONS API
+==================
+Timestamp: 2025-12-08_21-42-21_UTC
+Resource: organizations
+
+Base Path: /v1/organizations/{organizationId}
+
+DESCRIPTION
+-----------
+Organizations are the top-level containers in Apigee. All other resources 
+(environments, API proxies, developers, apps, etc.) belong to an organization.
+
+OPERATIONS
+----------
+
+1. GET /v1/organizations/{organizationId}
+   Description: Gets organization details
+   Parameters:
+     - organizationId (path, required): Organization ID
+   Response: Organization object
+   
+2. LIST /v1/organizations
+   Description: Lists organizations accessible by the caller
+   Parameters:
+     - parent (query, optional): Parent resource (e.g., "projects/PROJECT_ID")
+   Response: List of organizations
+   
+3. UPDATE /v1/organizations/{organizationId}
+   Description: Updates organization properties
+   Method: PATCH
+   Parameters:
+     - organizationId (path, required): Organization ID
+     - updateMask (query, optional): Fields to update
+   Request Body: Organization object
+   Response: Updated organization object
+
+RESOURCE SCHEMA
+---------------
+{
+  "name": "string",                    // Organization name
+  "displayName": "string",             // Display name
+  "description": "string",             // Description
+  "createdAt": "string",              // Creation timestamp (RFC3339)
+  "lastModifiedAt": "string",         // Last modified timestamp
+  "environments": ["string"],          // List of environment names
+  "properties": {                      // Custom properties
+    "property": [{
+      "name": "string",
+      "value": "string"
+    }]
+  },
+  "analyticsRegion": "string",         // Analytics region
+  "authorizedNetwork": "string",       // Authorized VPC network
+  "runtimeType": "string",            // CLOUD or HYBRID
+  "subscriptionType": "string",        // Subscription type
+  "caCertificate": "string",          // CA certificate
+  "runtimeDatabaseEncryptionKeyName": "string",  // KMS key
+  "projectId": "string",               // GCP Project ID
+  "state": "string",                   // ACTIVE, CREATING, etc.
+  "billingType": "string"              // Billing type
+}
+
+EXAMPLES
+--------
+Get organization:
+  GET /v1/organizations/my-org
+  
+List organizations:
+  GET /v1/organizations?parent=projects/my-project
+
+Update organization:
+  PATCH /v1/organizations/my-org
+  {
+    "description": "Updated description",
+    "displayName": "My Organization"
+  }
+
+COMMON USE CASES
+----------------
+1. Retrieve organization configuration
+2. List all accessible organizations
+3. Update organization metadata
+4. Check organization status
+
+ERROR CODES
+-----------
+- 404: Organization not found
+- 403: Permission denied
+- 400: Invalid request
+
+RELATED RESOURCES
+-----------------
+- Environments: /v1/organizations/{org}/environments
+- API Proxies: /v1/organizations/{org}/apis
+- Developers: /v1/organizations/{org}/developers
+
+NOTES
+-----
+- Organization names are immutable after creation
+- Requires cloud-platform scope
+- Changes may take time to propagate

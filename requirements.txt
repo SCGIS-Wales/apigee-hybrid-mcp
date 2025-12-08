@@ -1,0 +1,19 @@
+# Core MCP and Google Cloud dependencies
+mcp>=1.0.0
+google-auth>=2.35.0
+google-auth-httplib2>=0.2.0
+google-api-python-client>=2.151.0
+
+# Async and HTTP
+aiohttp>=3.10.0
+
+# Data validation
+pydantic>=2.9.0
+
+# Resilience
+tenacity>=9.0.0
+circuitbreaker>=2.0.0
+
+# Logging
+structlog>=24.4.0
+python-json-logger>=2.0.7

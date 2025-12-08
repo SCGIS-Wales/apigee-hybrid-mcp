@@ -1,0 +1,155 @@
+ENVIRONMENTS API
+=================
+Timestamp: 2025-12-08_21-42-21_UTC
+Resource: environments
+
+Base Path: /v1/organizations/{organizationId}/environments/{environmentId}
+
+DESCRIPTION
+-----------
+Environments represent deployment contexts within an organization (e.g., dev, test, prod).
+Each environment can have its own configuration, virtual hosts, and deployed API proxies.
+
+OPERATIONS
+----------
+
+1. GET /v1/organizations/{org}/environments/{env}
+   Description: Gets environment details
+   Parameters:
+     - org (path, required): Organization ID
+     - env (path, required): Environment name
+   Response: Environment object
+
+2. LIST /v1/organizations/{org}/environments
+   Description: Lists all environments in an organization
+   Parameters:
+     - org (path, required): Organization ID
+   Response: List of environments
+
+3. CREATE /v1/organizations/{org}/environments
+   Description: Creates a new environment
+   Method: POST
+   Parameters:
+     - org (path, required): Organization ID
+   Request Body: Environment object
+   Response: Created environment object
+
+4. UPDATE /v1/organizations/{org}/environments/{env}
+   Description: Updates environment configuration
+   Method: PATCH
+   Parameters:
+     - org (path, required): Organization ID
+     - env (path, required): Environment name
+     - updateMask (query, optional): Fields to update
+   Request Body: Environment object
+   Response: Updated environment object
+
+5. DELETE /v1/organizations/{org}/environments/{env}
+   Description: Deletes an environment
+   Parameters:
+     - org (path, required): Organization ID
+     - env (path, required): Environment name
+   Response: Empty response on success
+
+6. GET /v1/organizations/{org}/environments/{env}/stats
+   Description: Gets environment statistics
+   Parameters:
+     - org (path, required): Organization ID
+     - env (path, required): Environment name
+     - select (query, required): Metrics to retrieve
+     - timeRange (query, required): Time range
+   Response: Statistics data
+
+RESOURCE SCHEMA
+---------------
+{
+  "name": "string",                    // Environment name (immutable)
+  "displayName": "string",             // Display name
+  "description": "string",             // Description
+  "createdAt": "string",              // Creation timestamp
+  "lastModifiedAt": "string",         // Last modified timestamp
+  "properties": {                      // Custom properties
+    "property": [{
+      "name": "string",
+      "value": "string"
+    }]
+  },
+  "state": "string",                   // ACTIVE, CREATING, DELETING
+  "type": "string"                     // PRODUCTION, NON_PRODUCTION
+}
+
+RELATED OPERATIONS
+------------------
+
+Environment IAM:
+- getIamPolicy: Get IAM policy for environment
+- setIamPolicy: Set IAM policy for environment
+- testIamPermissions: Test IAM permissions
+
+Environment Resources:
+- Key Value Maps: /v1/organizations/{org}/environments/{env}/keyvaluemaps
+- Target Servers: /v1/organizations/{org}/environments/{env}/targetservers
+- Virtual Hosts: /v1/organizations/{org}/environments/{env}/virtualhosts
+- Caches: /v1/organizations/{org}/environments/{env}/caches
+- References: /v1/organizations/{org}/environments/{env}/references
+- Resource Files: /v1/organizations/{org}/environments/{env}/resourcefiles
+
+EXAMPLES
+--------
+List environments:
+  GET /v1/organizations/my-org/environments
+  
+Create environment:
+  POST /v1/organizations/my-org/environments
+  {
+    "name": "prod",
+    "displayName": "Production",
+    "description": "Production environment",
+    "type": "PRODUCTION"
+  }
+
+Get environment:
+  GET /v1/organizations/my-org/environments/prod
+
+Update environment:
+  PATCH /v1/organizations/my-org/environments/prod
+  {
+    "description": "Updated production environment"
+  }
+
+Get environment stats:
+  GET /v1/organizations/my-org/environments/prod/stats
+    ?select=sum(message_count)
+    &timeRange=2024-01-01T00:00:00Z~2024-01-31T23:59:59Z
+
+Delete environment:
+  DELETE /v1/organizations/my-org/environments/dev
+
+COMMON USE CASES
+----------------
+1. Manage multiple deployment environments
+2. Monitor environment statistics
+3. Configure environment-specific settings
+4. Control access with IAM policies
+
+ERROR CODES
+-----------
+- 404: Environment not found
+- 403: Permission denied
+- 409: Environment already exists (on create)
+- 400: Invalid configuration
+
+BEST PRACTICES
+--------------
+- Use separate environments for dev, test, staging, prod
+- Apply consistent naming conventions
+- Set appropriate IAM policies per environment
+- Monitor environment health and statistics
+- Use resource quotas to prevent abuse
+
+NOTES
+-----
+- Environment names are immutable
+- Deleting an environment removes all associated resources
+- Changes to environment configuration may require redeployment
+- Environment statistics have retention limits

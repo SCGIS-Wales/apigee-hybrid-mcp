@@ -1,0 +1,300 @@
+DEBUG SESSIONS (TRACE) API
+==========================
+Timestamp: 2025-12-08_21-42-21_UTC
+Resource: debugsessions
+
+Base Path: /v1/organizations/{organizationId}/environments/{environmentId}/apis/{apiId}/revisions/{revisionId}/debugsessions
+
+DESCRIPTION
+-----------
+Debug sessions (also called Trace) capture detailed execution information for API
+proxy requests, including policy execution, variable values, and flow transitions.
+Essential for troubleshooting and understanding API behavior.
+
+OPERATIONS
+----------
+
+1. CREATE /v1/organizations/{org}/environments/{env}/apis/{api}/revisions/{rev}/debugsessions
+   Description: Creates a new debug session
+   Method: POST
+   Parameters:
+     - org (path, required): Organization ID
+     - env (path, required): Environment name
+     - api (path, required): API proxy name
+     - rev (path, required): Revision number
+     - session (query, required): Session ID (UUID recommended)
+     - timeout (query, optional): Session timeout in seconds (max 600)
+   Request Body: Debug session configuration
+   Response: Debug session object
+
+2. GET /v1/organizations/{org}/environments/{env}/apis/{api}/revisions/{rev}/debugsessions/{session}
+   Description: Gets debug session details
+   Parameters:
+     - org (path, required): Organization ID
+     - env (path, required): Environment name
+     - api (path, required): API proxy name
+     - rev (path, required): Revision number
+     - session (path, required): Session ID
+   Response: Debug session object with metadata
+
+3. LIST /v1/organizations/{org}/environments/{env}/apis/{api}/revisions/{rev}/debugsessions/{session}/data
+   Description: Lists captured transaction IDs
+   Parameters:
+     - org (path, required): Organization ID
+     - env (path, required): Environment name
+     - api (path, required): API proxy name
+     - rev (path, required): Revision number
+     - session (path, required): Session ID
+   Response: List of transaction IDs
+
+4. GET /v1/organizations/{org}/environments/{env}/apis/{api}/revisions/{rev}/debugsessions/{session}/data/{transaction}
+   Description: Gets detailed trace data for a transaction
+   Parameters:
+     - org (path, required): Organization ID
+     - env (path, required): Environment name
+     - api (path, required): API proxy name
+     - rev (path, required): Revision number
+     - session (path, required): Session ID
+     - transaction (path, required): Transaction ID
+   Response: Complete trace data
+
+5. DELETE /v1/organizations/{org}/environments/{env}/apis/{api}/revisions/{rev}/debugsessions/{session}/data/{transaction}
+   Description: Deletes transaction data
+   Parameters:
+     - org (path, required): Organization ID
+     - env (path, required): Environment name
+     - api (path, required): API proxy name
+     - rev (path, required): Revision number
+     - session (path, required): Session ID
+     - transaction (path, required): Transaction ID
+   Response: Empty response
+
+6. DELETE /v1/organizations/{org}/environments/{env}/apis/{api}/revisions/{rev}/debugsessions/{session}
+   Description: Deletes debug session (stops tracing)
+   Parameters:
+     - org (path, required): Organization ID
+     - env (path, required): Environment name
+     - api (path, required): API proxy name
+     - rev (path, required): Revision number
+     - session (path, required): Session ID
+   Response: Empty response
+
+RESOURCE SCHEMA
+---------------
+Debug Session:
+{
+  "name": "string",                    // Session ID
+  "timeout": "string",                 // Timeout in seconds
+  "count": "string",                   // Number of transactions captured
+  "createTime": "string",              // Creation timestamp
+  "filter": {                          // Optional filter criteria
+    "property": [{
+      "property": "string",            // Filter property
+      "value": "string"                // Filter value
+    }]
+  }
+}
+
+Transaction Data (Trace):
+{
+  "point": [{                          // Execution points
+    "id": "string",                    // Point ID
+    "results": {
+      "ActionResult": "string",        // Action result
+      "accessList": {                  // Variables
+        "access": [{
+          "Get": {
+            "name": "string",          // Variable name
+            "value": "string"          // Variable value
+          },
+          "Set": {
+            "name": "string",
+            "value": "string"
+          }
+        }]
+      },
+      "pipelineMessage": {             // Request/response data
+        "headers": [{
+          "name": "string",
+          "value": "string"
+        }],
+        "method": "string",
+        "path": "string",
+        "queryParams": [{
+          "name": "string",
+          "value": "string"
+        }],
+        "statusCode": "string",
+        "reasonPhrase": "string",
+        "content": "string"
+      },
+      "timestamp": "string",
+      "properties": {
+        "property": [{
+          "name": "string",
+          "value": "string"
+        }]
+      }
+    }
+  }],
+  "completed": "boolean",              // Transaction completed flag
+  "faultMessage": "string"             // Error message if fault occurred
+}
+
+Execution Point Types:
+- FlowInfo: Flow transition
+- Condition: Condition evaluation
+- PolicyExecutionStart: Policy begins execution
+- PolicyExecutionEnd: Policy completes execution
+- PolicyExecution: Policy execution summary
+- FlowStart: Flow begins
+- FlowEnd: Flow completes
+
+FILTER PROPERTIES
+-----------------
+- client.ip: Client IP address
+- client.host: Client hostname
+- request.header.*: Request header
+- request.uri: Request URI
+- request.verb: HTTP method
+- response.status.code: Response status code
+
+DEBUG SESSION CONFIGURATION
+---------------------------
+{
+  "filter": {
+    "property": [
+      {
+        "property": "client.ip",
+        "value": "192.168.1.100"
+      },
+      {
+        "property": "request.header.x-debug-id",
+        "value": "test123"
+      }
+    ]
+  }
+}
+
+EXAMPLES
+--------
+Create debug session:
+  POST /v1/organizations/my-org/environments/prod/apis/weather-api/revisions/1/debugsessions
+    ?session=abc-123-def
+    &timeout=300
+  {
+    "filter": {
+      "property": [{
+        "property": "client.ip",
+        "value": "10.0.0.1"
+      }]
+    }
+  }
+
+Get debug session:
+  GET /v1/organizations/my-org/environments/prod/apis/weather-api/revisions/1/debugsessions/abc-123-def
+
+List captured transactions:
+  GET /v1/organizations/my-org/environments/prod/apis/weather-api/revisions/1/debugsessions/abc-123-def/data
+
+Get transaction trace:
+  GET /v1/organizations/my-org/environments/prod/apis/weather-api/revisions/1/debugsessions/abc-123-def/data/txn-456
+
+Delete transaction:
+  DELETE /v1/organizations/my-org/environments/prod/apis/weather-api/revisions/1/debugsessions/abc-123-def/data/txn-456
+
+Stop debug session:
+  DELETE /v1/organizations/my-org/environments/prod/apis/weather-api/revisions/1/debugsessions/abc-123-def
+
+TRACE ANALYSIS WORKFLOW
+------------------------
+1. Create debug session with optional filters
+2. Generate traffic to API (or wait for matching requests)
+3. List captured transaction IDs
+4. Retrieve detailed trace for specific transactions
+5. Analyze execution flow, variables, and policies
+6. Identify bottlenecks or errors
+7. Clean up: delete session when done
+
+COMMON USE CASES
+----------------
+1. Troubleshooting API proxy issues
+2. Understanding request/response flow
+3. Debugging policy execution
+4. Analyzing variable transformations
+5. Investigating performance issues
+6. Validating conditional logic
+7. Examining authentication failures
+8. Testing new proxy configurations
+
+TRACE DATA ANALYSIS
+-------------------
+Key information in trace:
+- Request/response headers and body
+- Policy execution sequence and timing
+- Variable values at each step
+- Condition evaluations (true/false)
+- Error messages and stack traces
+- Service callout request/response
+- Cache hits/misses
+- Authentication/authorization results
+
+ERROR CODES
+-----------
+- 404: Session or transaction not found
+- 403: Permission denied
+- 400: Invalid session ID or timeout
+- 409: Session already exists
+
+BEST PRACTICES
+--------------
+- Use unique session IDs (UUIDs recommended)
+- Set appropriate timeout values (default 10 minutes)
+- Use filters to reduce noise in production
+- Clean up sessions when done
+- Avoid long-running sessions in production
+- Limit number of concurrent sessions
+- Review traces systematically
+- Document findings from trace analysis
+- Use trace for performance optimization
+- Combine with logging for complete picture
+
+PERFORMANCE CONSIDERATIONS
+---------------------------
+- Tracing adds overhead to requests
+- Each captured transaction uses memory
+- Maximum transactions per session: 1000
+- Maximum session duration: 10 minutes (600 seconds)
+- Automatic cleanup after timeout
+- Production tracing should be targeted
+
+SECURITY NOTES
+--------------
+- Trace data may contain sensitive information
+- Limit trace access with IAM policies
+- Filter sensitive data before tracing
+- Delete trace data promptly
+- Audit trace session creation
+- Mask sensitive variables in policies
+- Use trace only in controlled environments
+
+INTEGRATION WITH UI
+-------------------
+Apigee UI provides:
+- Visual trace viewer
+- Timeline of policy execution
+- Variable inspector
+- Filter by execution time
+- Error highlighting
+- Export trace data
+- Comparison between traces
+
+NOTES
+-----
+- Sessions automatically expire after timeout
+- Maximum 1000 transactions per session
+- Trace data is ephemeral (not persisted long-term)
+- Filters are ANDed together
+- Session ID must be unique
+- Only captures matching requests
+- Works with deployed revisions only

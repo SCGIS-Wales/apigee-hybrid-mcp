@@ -1,0 +1,275 @@
+COMPANIES (TEAMS) API
+======================
+Timestamp: 2025-12-08_21-42-21_UTC
+Resource: companies
+
+Base Path: /v1/organizations/{organizationId}/companies/{companyId}
+
+DESCRIPTION
+-----------
+Companies (also called Teams) represent organizations or groups that can have
+multiple developers and apps. They enable team-based API consumption models.
+
+OPERATIONS
+----------
+
+1. LIST /v1/organizations/{org}/companies
+   Description: Lists all companies
+   Parameters:
+     - org (path, required): Organization ID
+     - count (query, optional): Results per page
+     - expand (query, optional): Include detailed info
+     - startKey (query, optional): Pagination start key
+   Response: List of company objects
+
+2. GET /v1/organizations/{org}/companies/{company}
+   Description: Gets company details
+   Parameters:
+     - org (path, required): Organization ID
+     - company (path, required): Company name
+   Response: Company object
+
+3. CREATE /v1/organizations/{org}/companies
+   Description: Creates a new company
+   Method: POST
+   Parameters:
+     - org (path, required): Organization ID
+   Request Body: Company object
+   Response: Created company object
+
+4. UPDATE /v1/organizations/{org}/companies/{company}
+   Description: Updates company information
+   Method: PUT
+   Parameters:
+     - org (path, required): Organization ID
+     - company (path, required): Company name
+   Request Body: Company object
+   Response: Updated company object
+
+5. DELETE /v1/organizations/{org}/companies/{company}
+   Description: Deletes a company
+   Parameters:
+     - org (path, required): Organization ID
+     - company (path, required): Company name
+   Response: Company object
+
+COMPANY DEVELOPERS
+------------------
+
+6. LIST /v1/organizations/{org}/companies/{company}/developers
+   Description: Lists developers in company
+   Parameters:
+     - org (path, required): Organization ID
+     - company (path, required): Company name
+   Response: List of developer emails
+
+7. ADD /v1/organizations/{org}/companies/{company}/developers/{developer}
+   Description: Adds developer to company
+   Method: POST
+   Parameters:
+     - org (path, required): Organization ID
+     - company (path, required): Company name
+     - developer (path, required): Developer email
+     - role (query, optional): Developer role
+   Response: Developer object
+
+8. GET /v1/organizations/{org}/companies/{company}/developers/{developer}
+   Description: Gets developer's role in company
+   Parameters:
+     - org (path, required): Organization ID
+     - company (path, required): Company name
+     - developer (path, required): Developer email
+   Response: Developer role object
+
+9. UPDATE /v1/organizations/{org}/companies/{company}/developers/{developer}
+   Description: Updates developer role
+   Method: PUT
+   Parameters:
+     - org (path, required): Organization ID
+     - company (path, required): Company name
+     - developer (path, required): Developer email
+   Request Body: Role object
+   Response: Updated role object
+
+10. REMOVE /v1/organizations/{org}/companies/{company}/developers/{developer}
+    Description: Removes developer from company
+    Method: DELETE
+    Parameters:
+      - org (path, required): Organization ID
+      - company (path, required): Company name
+      - developer (path, required): Developer email
+    Response: Developer object
+
+COMPANY APPS
+------------
+
+11. LIST /v1/organizations/{org}/companies/{company}/apps
+    Description: Lists company apps
+    Parameters:
+      - org (path, required): Organization ID
+      - company (path, required): Company name
+      - count (query, optional): Results per page
+      - expand (query, optional): Include details
+    Response: List of app objects
+
+12. GET /v1/organizations/{org}/companies/{company}/apps/{app}
+    Description: Gets company app details
+    Parameters:
+      - org (path, required): Organization ID
+      - company (path, required): Company name
+      - app (path, required): App name
+    Response: Company app object
+
+13. CREATE /v1/organizations/{org}/companies/{company}/apps
+    Description: Creates a company app
+    Method: POST
+    Parameters:
+      - org (path, required): Organization ID
+      - company (path, required): Company name
+    Request Body: App object
+    Response: Created app object
+
+14. UPDATE /v1/organizations/{org}/companies/{company}/apps/{app}
+    Description: Updates company app
+    Method: PUT
+    Parameters:
+      - org (path, required): Organization ID
+      - company (path, required): Company name
+      - app (path, required): App name
+    Request Body: App object
+    Response: Updated app object
+
+15. DELETE /v1/organizations/{org}/companies/{company}/apps/{app}
+    Description: Deletes company app
+    Parameters:
+      - org (path, required): Organization ID
+      - company (path, required): Company name
+      - app (path, required): App name
+    Response: App object
+
+RESOURCE SCHEMA
+---------------
+Company:
+{
+  "name": "string",                    // Company name (required, immutable)
+  "displayName": "string",             // Display name
+  "organization": "string",            // Organization name
+  "status": "string",                  // active or inactive
+  "attributes": [{                     // Custom attributes
+    "name": "string",
+    "value": "string"
+  }],
+  "createdAt": "string",              // Creation timestamp
+  "createdBy": "string",              // Creator email
+  "lastModifiedAt": "string",         // Last modified timestamp
+  "lastModifiedBy": "string",         // Last modifier email
+  "apps": ["string"]                  // List of app names
+}
+
+Developer Role:
+{
+  "role": "string",                    // Role name (e.g., admin, developer)
+  "developer": {
+    "email": "string",
+    "firstName": "string",
+    "lastName": "string"
+  }
+}
+
+EXAMPLES
+--------
+Create company:
+  POST /v1/organizations/my-org/companies
+  {
+    "name": "acme-corp",
+    "displayName": "ACME Corporation",
+    "attributes": [
+      {"name": "industry", "value": "Technology"},
+      {"name": "tier", "value": "enterprise"}
+    ]
+  }
+
+List companies:
+  GET /v1/organizations/my-org/companies
+
+Get company:
+  GET /v1/organizations/my-org/companies/acme-corp
+
+Update company:
+  PUT /v1/organizations/my-org/companies/acme-corp
+  {
+    "displayName": "ACME Corp (Updated)",
+    "status": "active"
+  }
+
+Add developer to company:
+  POST /v1/organizations/my-org/companies/acme-corp/developers/dev@example.com
+    ?role=admin
+
+List company developers:
+  GET /v1/organizations/my-org/companies/acme-corp/developers
+
+Get developer role:
+  GET /v1/organizations/my-org/companies/acme-corp/developers/dev@example.com
+
+Update developer role:
+  PUT /v1/organizations/my-org/companies/acme-corp/developers/dev@example.com
+  {
+    "role": "developer"
+  }
+
+Remove developer:
+  DELETE /v1/organizations/my-org/companies/acme-corp/developers/dev@example.com
+
+Create company app:
+  POST /v1/organizations/my-org/companies/acme-corp/apps
+  {
+    "name": "enterprise-app",
+    "apiProducts": ["premium-product"],
+    "attributes": [
+      {"name": "environment", "value": "production"}
+    ]
+  }
+
+List company apps:
+  GET /v1/organizations/my-org/companies/acme-corp/apps
+
+Delete company:
+  DELETE /v1/organizations/my-org/companies/acme-corp
+
+COMMON USE CASES
+----------------
+1. Enterprise B2B API programs
+2. Partner integrations
+3. Team-based API access control
+4. Shared API keys across team members
+5. Centralized billing for teams
+6. Department or division isolation
+7. Multi-tenant applications
+
+ERROR CODES
+-----------
+- 404: Company or developer not found
+- 403: Permission denied
+- 409: Company name already exists
+- 400: Invalid request or missing fields
+
+BEST PRACTICES
+--------------
+- Use companies for team/organization-based access
+- Assign appropriate roles to developers
+- Use attributes for company categorization
+- Monitor company-level API usage
+- Implement approval workflows for company creation
+- Document company structure and responsibilities
+- Use meaningful company names
+- Track company lifecycle (creation, updates, deletion)
+
+NOTES
+-----
+- Company names are immutable
+- Deleting company also deletes associated apps
+- Inactive companies cannot create new apps
+- Developers can belong to multiple companies
+- Company apps are separate from developer apps
+- Company status affects all associated apps and developers

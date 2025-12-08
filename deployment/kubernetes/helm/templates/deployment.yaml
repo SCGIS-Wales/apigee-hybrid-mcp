@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "apigee-hybrid-mcp.fullname" . }}
+  labels:
+    {{- include "apigee-hybrid-mcp.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "apigee-hybrid-mcp.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "apigee-hybrid-mcp.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "apigee-hybrid-mcp.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: {{ .Chart.Name }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.service.targetPort }}
+          protocol: TCP
+        env:
+        - name: APIGEE_MCP_GOOGLE_PROJECT_ID
+          value: {{ .Values.config.googleProjectId | quote }}
+        - name: APIGEE_MCP_APIGEE_ORGANIZATION
+          value: {{ .Values.config.apigeeOrganization | quote }}
+        - name: APIGEE_MCP_LOG_LEVEL
+          value: {{ .Values.config.logLevel | quote }}
+        - name: APIGEE_MCP_MAX_RETRIES
+          value: {{ .Values.config.maxRetries | quote }}
+        - name: APIGEE_MCP_REQUEST_TIMEOUT
+          value: {{ .Values.config.requestTimeout | quote }}
+        - name: APIGEE_MCP_CIRCUIT_BREAKER_FAILURE_THRESHOLD
+          value: {{ .Values.config.circuitBreakerFailureThreshold | quote }}
+        - name: APIGEE_MCP_CIRCUIT_BREAKER_TIMEOUT
+          value: {{ .Values.config.circuitBreakerTimeout | quote }}
+        - name: APIGEE_MCP_RATE_LIMIT_REQUESTS
+          value: {{ .Values.config.rateLimitRequests | quote }}
+        - name: APIGEE_MCP_RATE_LIMIT_WINDOW
+          value: {{ .Values.config.rateLimitWindow | quote }}
+        - name: APIGEE_MCP_GOOGLE_CREDENTIALS_PATH
+          value: "/app/credentials/{{ .Values.secrets.credentialsSecretKey }}"
+        volumeMounts:
+        - name: credentials
+          mountPath: /app/credentials
+          readOnly: true
+        {{- if .Values.persistence.enabled }}
+        - name: logs
+          mountPath: {{ .Values.persistence.mountPath }}
+        {{- end }}
+        {{- if .Values.livenessProbe.enabled }}
+        livenessProbe:
+          exec:
+            command:
+            - python
+            - -c
+            - "import sys; sys.exit(0)"
+          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          successThreshold: {{ .Values.livenessProbe.successThreshold }}
+        {{- end }}
+        {{- if .Values.readinessProbe.enabled }}
+        readinessProbe:
+          exec:
+            command:
+            - python
+            - -c
+            - "import sys; sys.exit(0)"
+          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          successThreshold: {{ .Values.readinessProbe.successThreshold }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+      - name: credentials
+        secret:
+          secretName: {{ .Values.secrets.credentialsSecretName }}
+          defaultMode: 0400
+      {{- if .Values.persistence.enabled }}
+      - name: logs
+        persistentVolumeClaim:
+          claimName: {{ include "apigee-hybrid-mcp.fullname" . }}-logs
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

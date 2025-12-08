@@ -1,0 +1,256 @@
+API PRODUCTS API
+=================
+Timestamp: 2025-12-08_21-42-21_UTC
+Resource: apiproducts
+
+Base Path: /v1/organizations/{organizationId}/apiproducts/{apiproductId}
+
+DESCRIPTION
+-----------
+API Products are bundles of API proxies combined with a service plan. They define
+what APIs can be accessed and under what conditions (quotas, rate limits, etc.).
+
+OPERATIONS
+----------
+
+1. LIST /v1/organizations/{org}/apiproducts
+   Description: Lists all API products
+   Parameters:
+     - org (path, required): Organization ID
+     - count (query, optional): Results per page
+     - expand (query, optional): Include detailed info
+     - startKey (query, optional): Pagination start key
+     - attributename (query, optional): Filter by attribute name
+     - attributevalue (query, optional): Filter by attribute value
+   Response: List of API product names or objects
+
+2. GET /v1/organizations/{org}/apiproducts/{apiproduct}
+   Description: Gets API product details
+   Parameters:
+     - org (path, required): Organization ID
+     - apiproduct (path, required): API product name
+   Response: API product object
+
+3. CREATE /v1/organizations/{org}/apiproducts
+   Description: Creates a new API product
+   Method: POST
+   Parameters:
+     - org (path, required): Organization ID
+   Request Body: API product object
+   Response: Created API product object
+
+4. UPDATE /v1/organizations/{org}/apiproducts/{apiproduct}
+   Description: Updates an API product
+   Method: PUT
+   Parameters:
+     - org (path, required): Organization ID
+     - apiproduct (path, required): API product name
+   Request Body: API product object
+   Response: Updated API product object
+
+5. DELETE /v1/organizations/{org}/apiproducts/{apiproduct}
+   Description: Deletes an API product
+   Parameters:
+     - org (path, required): Organization ID
+     - apiproduct (path, required): API product name
+   Response: API product object
+
+6. UPDATE_ATTRIBUTE /v1/organizations/{org}/apiproducts/{apiproduct}/attributes/{attribute}
+   Description: Updates or creates a product attribute
+   Method: POST
+   Parameters:
+     - org (path, required): Organization ID
+     - apiproduct (path, required): API product name
+     - attribute (path, required): Attribute name
+   Request Body: Attribute object
+   Response: Attribute object
+
+7. DELETE_ATTRIBUTE /v1/organizations/{org}/apiproducts/{apiproduct}/attributes/{attribute}
+   Description: Deletes a product attribute
+   Parameters:
+     - org (path, required): Organization ID
+     - apiproduct (path, required): API product name
+     - attribute (path, required): Attribute name
+   Response: Attribute object
+
+8. GET_ATTRIBUTES /v1/organizations/{org}/apiproducts/{apiproduct}/attributes
+   Description: Lists all attributes
+   Parameters:
+     - org (path, required): Organization ID
+     - apiproduct (path, required): API product name
+   Response: List of attributes
+
+RESOURCE SCHEMA
+---------------
+{
+  "name": "string",                    // Product name (required, immutable)
+  "displayName": "string",             // Display name
+  "description": "string",             // Description
+  "approvalType": "string",            // auto or manual
+  "attributes": [{                     // Custom attributes
+    "name": "string",
+    "value": "string"
+  }],
+  "apiResources": ["string"],         // Resource paths (e.g., "/", "/**", "/users/*")
+  "proxies": ["string"],              // API proxy names
+  "environments": ["string"],          // Environment names (optional)
+  "scopes": ["string"],               // OAuth scopes
+  "quota": "string",                  // Quota limit (e.g., "100")
+  "quotaInterval": "string",          // Quota interval (e.g., "1")
+  "quotaTimeUnit": "string",          // minute, hour, day, month
+  "operationGroup": {                 // Operation-level config
+    "operationConfigs": [{
+      "operations": [{
+        "resource": "string",
+        "methods": ["string"]
+      }],
+      "quota": {
+        "limit": "string",
+        "interval": "string",
+        "timeUnit": "string"
+      },
+      "apiSource": "string"
+    }],
+    "operationConfigType": "string"   // proxy or remoteservice
+  },
+  "graphqlOperationGroup": {          // GraphQL operations
+    "operationConfigs": [{
+      "operations": [{
+        "operation": "string",
+        "operationType": "string"
+      }],
+      "quota": {...}
+    }],
+    "operationConfigType": "string"
+  },
+  "createdAt": "string",
+  "createdBy": "string",
+  "lastModifiedAt": "string",
+  "lastModifiedBy": "string"
+}
+
+APPROVAL TYPES
+--------------
+- auto: Apps automatically approved for this product
+- manual: Apps require manual approval
+
+QUOTA TIME UNITS
+----------------
+- minute: Per minute quota
+- hour: Per hour quota
+- day: Per day quota
+- month: Per month quota
+
+API RESOURCES
+-------------
+Path patterns for access control:
+- "/" : Root path only
+- "/**" : All paths (wildcard)
+- "/users" : Specific path
+- "/users/*" : Path with single-level wildcard
+- "/users/**" : Path with multi-level wildcard
+
+EXAMPLES
+--------
+List API products:
+  GET /v1/organizations/my-org/apiproducts
+
+Create API product:
+  POST /v1/organizations/my-org/apiproducts
+  {
+    "name": "basic-product",
+    "displayName": "Basic API Product",
+    "description": "Basic tier with rate limiting",
+    "approvalType": "auto",
+    "proxies": ["weather-api", "maps-api"],
+    "environments": ["prod"],
+    "apiResources": ["/**"],
+    "quota": "1000",
+    "quotaInterval": "1",
+    "quotaTimeUnit": "day",
+    "attributes": [
+      {"name": "access", "value": "public"},
+      {"name": "tier", "value": "basic"}
+    ]
+  }
+
+Get API product:
+  GET /v1/organizations/my-org/apiproducts/basic-product
+
+Update API product:
+  PUT /v1/organizations/my-org/apiproducts/basic-product
+  {
+    "displayName": "Basic API Product (Updated)",
+    "quota": "2000",
+    "quotaInterval": "1",
+    "quotaTimeUnit": "day"
+  }
+
+Create with operation-level quotas:
+  POST /v1/organizations/my-org/apiproducts
+  {
+    "name": "premium-product",
+    "displayName": "Premium Product",
+    "approvalType": "auto",
+    "proxies": ["api-proxy"],
+    "operationGroup": {
+      "operationConfigs": [{
+        "operations": [{
+          "resource": "/users",
+          "methods": ["GET", "POST"]
+        }],
+        "quota": {
+          "limit": "5000",
+          "interval": "1",
+          "timeUnit": "hour"
+        }
+      }],
+      "operationConfigType": "proxy"
+    }
+  }
+
+Delete API product:
+  DELETE /v1/organizations/my-org/apiproducts/basic-product
+
+Update attribute:
+  POST /v1/organizations/my-org/apiproducts/basic-product/attributes/tier
+  {
+    "name": "tier",
+    "value": "premium"
+  }
+
+COMMON USE CASES
+----------------
+1. Define API monetization tiers
+2. Bundle related APIs together
+3. Set different quotas per product tier
+4. Control access to specific API resources
+5. Implement freemium models
+6. Environment-specific products
+
+ERROR CODES
+-----------
+- 404: API product not found
+- 403: Permission denied
+- 409: Product name already exists
+- 400: Invalid configuration
+
+BEST PRACTICES
+--------------
+- Use clear, descriptive product names
+- Define appropriate quotas per tier
+- Use environments to control deployment
+- Set apiResources to limit access scope
+- Use attributes for product metadata
+- Implement approval workflows for sensitive APIs
+- Document product capabilities clearly
+- Monitor product usage and adjust quotas
+
+NOTES
+-----
+- Product names are immutable
+- Quotas apply per app credential
+- Empty proxies array means all proxies (not recommended)
+- Empty environments means all environments
+- Products can be updated without affecting apps
+- Deleting product affects all associated apps
