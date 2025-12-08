@@ -34,6 +34,11 @@ from mcp.types import Tool, TextContent
 
 from apigee_hybrid_mcp.api.client import ApigeeClient
 from apigee_hybrid_mcp.config import get_settings
+from apigee_hybrid_mcp.teams.repository import (
+    InMemoryTeamRepository,
+    TeamAlreadyExistsError,
+    TeamNotFoundError,
+)
 from apigee_hybrid_mcp.utils.logging import configure_logging, get_logger
 
 # Initialize logger
@@ -41,6 +46,9 @@ logger = get_logger(__name__)
 
 # Initialize MCP server
 app = Server("apigee-hybrid-mcp")
+
+# Initialize Teams repository (singleton)
+_team_repository = InMemoryTeamRepository()
 
 
 def create_tool_definition(
@@ -751,10 +759,10 @@ async def list_tools() -> List[Tool]:
             },
         ),
         
-        # Companies (Teams) API
+        # Companies (Teams) API - DEPRECATED for Hybrid (use Teams API instead)
         create_tool_definition(
             name="list-companies",
-            description="List all companies (teams) in an organization",
+            description="[DEPRECATED - Use list-teams] List all companies (teams) in an organization. Note: Companies API is OPDK-only, not available in Apigee Hybrid. Use Teams API instead.",
             parameters={
                 "type": "object",
                 "properties": {
@@ -772,7 +780,7 @@ async def list_tools() -> List[Tool]:
         ),
         create_tool_definition(
             name="get-company",
-            description="Get details of a specific company (team)",
+            description="[DEPRECATED - Use get-team] Get details of a specific company (team). Note: Companies API is OPDK-only, not available in Apigee Hybrid. Use Teams API instead.",
             parameters={
                 "type": "object",
                 "properties": {
@@ -790,7 +798,7 @@ async def list_tools() -> List[Tool]:
         ),
         create_tool_definition(
             name="create-company",
-            description="Create a new company (team)",
+            description="[DEPRECATED - Use create-team] Create a new company (team). Note: Companies API is OPDK-only, not available in Apigee Hybrid. Use Teams API instead.",
             parameters={
                 "type": "object",
                 "properties": {
@@ -808,6 +816,95 @@ async def list_tools() -> List[Tool]:
                     },
                 },
                 "required": ["organization", "name"],
+            },
+        ),
+        
+        # Teams API (Replaces Companies for Hybrid)
+        create_tool_definition(
+            name="list-teams",
+            description="List all teams in the organization. Teams provide group-based API access management for Apigee Hybrid.",
+            parameters={
+                "type": "object",
+                "properties": {},
+                "required": [],
+            },
+        ),
+        create_tool_definition(
+            name="get-team",
+            description="Get details of a specific team including members",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "team_id": {
+                        "type": "string",
+                        "description": "Team identifier",
+                    },
+                },
+                "required": ["team_id"],
+            },
+        ),
+        create_tool_definition(
+            name="create-team",
+            description="Create a new team with members",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Team name (required, must be unique, alphanumeric with hyphens/underscores)",
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Team description (optional)",
+                    },
+                    "members": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "List of member email addresses (optional)",
+                    },
+                },
+                "required": ["name"],
+            },
+        ),
+        create_tool_definition(
+            name="update-team",
+            description="Update an existing team's name, description, or members",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "team_id": {
+                        "type": "string",
+                        "description": "Team identifier",
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "New team name (optional, must be unique)",
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "New team description (optional)",
+                    },
+                    "members": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "New list of member email addresses (optional)",
+                    },
+                },
+                "required": ["team_id"],
+            },
+        ),
+        create_tool_definition(
+            name="delete-team",
+            description="Delete a team",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "team_id": {
+                        "type": "string",
+                        "description": "Team identifier",
+                    },
+                },
+                "required": ["team_id"],
             },
         ),
         
@@ -1124,20 +1221,20 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 data = await client.get(f"environments/{env}/keystores/{keystore}/aliases/{alias}")
                 return format_api_response(data, f"Get Keystore Alias: {alias}")
                 
-            # Companies (Teams) API
+            # Companies (Teams) API - DEPRECATED
             elif name == "list-companies":
                 org = arguments.get("organization", settings.apigee_organization)
                 params = {}
                 if arguments.get("expand"):
                     params["expand"] = "true"
                 data = await client.get("companies", params=params)
-                return format_api_response(data, "List Companies")
+                return format_api_response(data, "List Companies [DEPRECATED - Use list-teams]")
                 
             elif name == "get-company":
                 org = arguments.get("organization", settings.apigee_organization)
                 company = arguments["company"]
                 data = await client.get(f"companies/{company}")
-                return format_api_response(data, f"Get Company: {company}")
+                return format_api_response(data, f"Get Company: {company} [DEPRECATED - Use get-team]")
                 
             elif name == "create-company":
                 org = arguments.get("organization", settings.apigee_organization)
@@ -1146,7 +1243,57 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     "displayName": arguments.get("displayName", arguments["name"]),
                 }
                 data = await client.post("companies", json_data=company_data)
-                return format_api_response(data, "Create Company")
+                return format_api_response(data, "Create Company [DEPRECATED - Use create-team]")
+                
+            # Teams API (Local management, not Apigee API)
+            elif name == "list-teams":
+                teams = await _team_repository.list_teams()
+                data = {"teams": [team.model_dump() for team in teams]}
+                return format_api_response(data, "List Teams")
+                
+            elif name == "get-team":
+                team_id = arguments["team_id"]
+                try:
+                    team = await _team_repository.get_team(team_id)
+                    return format_api_response(team.model_dump(), f"Get Team: {team_id}")
+                except TeamNotFoundError as e:
+                    return [TextContent(type="text", text=f"Error: {str(e)}")]
+                
+            elif name == "create-team":
+                try:
+                    team = await _team_repository.create_team(
+                        name=arguments["name"],
+                        description=arguments.get("description", ""),
+                        members=arguments.get("members"),
+                    )
+                    return format_api_response(team.model_dump(), "Create Team")
+                except TeamAlreadyExistsError as e:
+                    return [TextContent(type="text", text=f"Error: {str(e)}")]
+                except ValueError as e:
+                    return [TextContent(type="text", text=f"Validation Error: {str(e)}")]
+                
+            elif name == "update-team":
+                team_id = arguments["team_id"]
+                try:
+                    team = await _team_repository.update_team(
+                        team_id=team_id,
+                        name=arguments.get("name"),
+                        description=arguments.get("description"),
+                        members=arguments.get("members"),
+                    )
+                    return format_api_response(team.model_dump(), f"Update Team: {team_id}")
+                except (TeamNotFoundError, TeamAlreadyExistsError) as e:
+                    return [TextContent(type="text", text=f"Error: {str(e)}")]
+                except ValueError as e:
+                    return [TextContent(type="text", text=f"Validation Error: {str(e)}")]
+                
+            elif name == "delete-team":
+                team_id = arguments["team_id"]
+                try:
+                    await _team_repository.delete_team(team_id)
+                    return [TextContent(type="text", text=f"Team deleted successfully: {team_id}")]
+                except TeamNotFoundError as e:
+                    return [TextContent(type="text", text=f"Error: {str(e)}")]
                 
             # Debug Sessions (Trace) API
             elif name == "create-debug-session":
