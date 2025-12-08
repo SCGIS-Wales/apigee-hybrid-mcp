@@ -52,11 +52,11 @@ This MCP server provides a comprehensive interface to Google Apigee Hybrid APIs,
 - ✅ **Environments**: Create, configure, and manage deployment environments
 - ✅ **API Proxy Lifecycle**: Deploy, undeploy, list, and manage API proxy revisions
 - ✅ **Developer Management**: Create, update, and manage API consumers
-- ✅ **App Management**: Developer apps and company apps with credential management
+- ✅ **App Management**: Developer apps with credential management
 - ✅ **API Products**: Define product bundles with quotas and rate limits
 - ✅ **Shared Flows**: Reusable policy sequences
 - ✅ **Keystores & Truststores**: Certificate and key management with aliases
-- ✅ **Companies (Teams)**: Team-based API access management
+- ✅ **Teams**: Modern team-based API access management (replaces deprecated Companies API)
 - ✅ **Debug Sessions (Trace)**: Request tracing and troubleshooting
 
 ### Technical Features
@@ -400,8 +400,47 @@ Full API documentation is archived in the [`archive/apigee-docs/`](archive/apige
 | Shared Flows | List, Get, Deploy, Undeploy | ✅ `list-shared-flows`, `get-shared-flow`, `deploy-shared-flow` |
 | Keystores | List, Get, Create, Delete | ✅ `list-keystores`, `get-keystore` |
 | Keystore Aliases | List, Get, Create, Update, Delete | ✅ `list-keystore-aliases`, `get-keystore-alias` |
-| Companies (Teams) | List, Get, Create, Update, Delete | ✅ `list-companies`, `get-company`, `create-company` |
+| **Teams** | **List, Get, Create, Update, Delete** | ✅ **`list-teams`, `get-team`, `create-team`, `update-team`, `delete-team`** |
+| ~~Companies~~ | ~~List, Get, Create~~ | ⚠️ **DEPRECATED** - Use Teams API instead (Companies are OPDK-only) |
 | Debug Sessions | Create, Get Data | ✅ `create-debug-session`, `get-debug-session-data` |
+
+### Teams API
+
+The **Teams API** provides team-based API access management for Apigee Hybrid. This replaces the deprecated Companies API which is only available in Apigee OPDK (On-Premises).
+
+**Key Features:**
+- Team creation with unique names and member management
+- Built-in validation (team names, email addresses)
+- In-memory storage (extensible to datastore)
+- Full CRUD operations via MCP tools
+
+**Example Usage:**
+```python
+# Create a team
+create_team(
+    name="engineering-team",
+    description="Engineering department API access",
+    members=["dev1@example.com", "dev2@example.com"]
+)
+
+# List all teams
+list_teams()
+
+# Update team members
+update_team(
+    team_id="team-abc123",
+    members=["dev1@example.com", "dev2@example.com", "dev3@example.com"]
+)
+
+# Delete a team
+delete_team(team_id="team-abc123")
+```
+
+**Important Notes:**
+- ⚠️ The **Companies API** (`list-companies`, `get-company`, `create-company`) is **deprecated** in Apigee Hybrid
+- Companies/Organizations in the Apigee sense are only available in Apigee OPDK (on-premises)
+- For Apigee Hybrid deployments, use the new **Teams API** for group-based access management
+
 
 ## 🧪 Testing
 
@@ -545,14 +584,127 @@ python -m apigee_hybrid_mcp.server
 
 Contributions are welcome! Please follow these guidelines:
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Write tests for your changes
-4. Ensure all tests pass (`pytest`)
-5. Run code quality checks (`black`, `ruff`, `mypy`)
-6. Commit your changes (`git commit -m 'Add amazing feature'`)
-7. Push to the branch (`git push origin feature/amazing-feature`)
-8. Open a Pull Request
+### Development Setup
+
+1. **Fork and clone the repository**:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/apigee-hybrid-mcp.git
+   cd apigee-hybrid-mcp
+   ```
+
+2. **Create a virtual environment**:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. **Install dependencies**:
+   ```bash
+   pip install -e .
+   pip install -r requirements-dev.txt
+   ```
+
+4. **Install pre-commit hooks** (recommended):
+   ```bash
+   pip install pre-commit
+   pre-commit install
+   ```
+
+### Code Quality Standards
+
+This project follows **PEP 8** (Python Enhancement Proposal 8) style guidelines and enforces high code quality standards.
+
+#### Formatting and Linting
+
+- **Black** (code formatter): Automatically formats code to PEP 8 standards
+  ```bash
+  black src/ tests/ --line-length=100
+  ```
+
+- **Ruff** (linter): Fast Python linter replacing flake8, isort, pyupgrade
+  ```bash
+  ruff check src/ tests/ --fix
+  ```
+
+- **MyPy** (type checker): Static type checking
+  ```bash
+  mypy src/
+  ```
+
+#### Documentation Standards
+
+- Follow **PEP 257** for docstrings
+- All public modules, classes, and functions must have docstrings
+- Use Google-style docstring format with types
+- Example:
+  ```python
+  def create_team(name: str, description: str = "") -> Team:
+      """Create a new team.
+      
+      Args:
+          name: Team name (must be unique)
+          description: Optional team description
+          
+      Returns:
+          Team: The created team
+          
+      Raises:
+          TeamAlreadyExistsError: If team with name exists
+      """
+  ```
+
+#### Testing
+
+- Write comprehensive unit tests for all new features
+- Aim for >80% code coverage
+- Use pytest with async support
+- Run tests:
+  ```bash
+  # Run all tests
+  pytest
+  
+  # Run with coverage
+  pytest --cov=src/apigee_hybrid_mcp --cov-report=html --cov-report=term
+  
+  # Run specific test file
+  pytest tests/unit/test_teams.py -v
+  ```
+
+#### Pre-commit Hooks
+
+Pre-commit hooks automatically check your code before commits:
+- Black formatting
+- Ruff linting and import sorting
+- MyPy type checking (optional)
+- Bandit security checks
+- YAML/JSON validation
+- Trailing whitespace removal
+
+Run manually:
+```bash
+pre-commit run --all-files
+```
+
+### Contribution Workflow
+
+1. Create a feature branch (`git checkout -b feature/amazing-feature`)
+2. Write tests for your changes
+3. Implement your feature
+4. Run code quality checks:
+   ```bash
+   black src/ tests/
+   ruff check src/ tests/ --fix
+   mypy src/
+   pytest
+   ```
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request with a clear description
+
+### Code Review
+
+All submissions require review. We use GitHub pull requests for this purpose. Consult
+[GitHub Help](https://help.github.com/articles/about-pull-requests/) for more information on using pull requests.
 
 ## 📄 License
 
