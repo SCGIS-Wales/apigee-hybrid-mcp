@@ -33,12 +33,6 @@ class TestAPIProducts:
             - Multiple products are returned
         """
         # Arrange
-        expected_response = {
-            "apiProduct": [
-                sample_api_product,
-                {**sample_api_product, "name": "premium-product"},
-            ]
-        }
         mock_apigee_client.session.request.return_value.__aenter__.return_value.status = 200
         mock_apigee_client.session.request.return_value.__aenter__.return_value.text = AsyncMock(
             return_value='{"apiProduct": [{"name": "basic-product"}, {"name": "premium-product"}]}'
