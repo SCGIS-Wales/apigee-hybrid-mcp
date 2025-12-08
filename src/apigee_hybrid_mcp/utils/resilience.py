@@ -1,6 +1,7 @@
 """Resilience utilities including retry logic and circuit breakers."""
 
 import functools
+import time
 from typing import Any, Callable, Optional, Type, TypeVar
 
 from circuitbreaker import CircuitBreaker  # type: ignore[import-untyped]
@@ -102,8 +103,6 @@ class RateLimiter:
         Returns:
             True if token acquired, False otherwise
         """
-        import time
-
         now = time.time()
         time_passed = now - self.last_update
 
