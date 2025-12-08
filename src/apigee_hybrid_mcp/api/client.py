@@ -160,26 +160,26 @@ class ApigeeClient:
                     headers=request_headers,
                 )
                 
-            async with make_request() as response:
-                response_text = await response.text()
+            response = await make_request()
+            response_text = await response.text()
+            
+            if response.status >= 400:
+                logger.error(
+                    "api_error",
+                    status=response.status,
+                    url=url,
+                    response=response_text,
+                )
+                raise ApigeeAPIError(
+                    f"API request failed: {response.status}",
+                    status_code=response.status,
+                    response_body=response_text,
+                )
                 
-                if response.status >= 400:
-                    logger.error(
-                        "api_error",
-                        status=response.status,
-                        url=url,
-                        response=response_text,
-                    )
-                    raise ApigeeAPIError(
-                        f"API request failed: {response.status}",
-                        status_code=response.status,
-                        response_body=response_text,
-                    )
-                    
-                # Parse JSON response
-                if response_text:
-                    return json.loads(response_text)
-                return {}
+            # Parse JSON response
+            if response_text:
+                return json.loads(response_text)
+            return {}
                 
         except aiohttp.ClientError as e:
             logger.error("client_error", error=str(e), url=url)

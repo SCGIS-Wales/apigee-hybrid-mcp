@@ -34,7 +34,7 @@ def create_circuit_breaker(
     """
     return CircuitBreaker(
         failure_threshold=failure_threshold,
-        timeout_duration=timeout_duration,
+        recovery_timeout=timeout_duration,
         name=name or "default",
     )
 
