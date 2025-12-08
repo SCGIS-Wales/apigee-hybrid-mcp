@@ -7,8 +7,8 @@ Production implementations could use Cloud Datastore, Firestore, etc.
 
 import uuid
 from abc import ABC, abstractmethod
-from datetime import datetime
-from typing import Dict, List, Optional
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 
 from apigee_hybrid_mcp.models.team import Team, TeamCreate, TeamUpdate
 
@@ -175,7 +175,7 @@ class InMemoryTeamRepository(TeamRepository):
 
         # Generate ID and timestamps
         team_id = str(uuid.uuid4())
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         # Create team entity
         team = Team(
@@ -246,14 +246,14 @@ class InMemoryTeamRepository(TeamRepository):
             raise TeamNotFoundError(team_id)
 
         # Update fields
-        updated_fields = {}
+        updated_fields: Dict[str, Any] = {}
         if team_data.description is not None:
             updated_fields["description"] = team_data.description
         if team_data.members is not None:
             updated_fields["members"] = team_data.members.copy()
 
         # Set update timestamp
-        updated_fields["updated_at"] = datetime.utcnow()
+        updated_fields["updated_at"] = datetime.now(timezone.utc)
 
         # Create updated team (immutable pattern)
         updated_team = team.model_copy(update=updated_fields)
