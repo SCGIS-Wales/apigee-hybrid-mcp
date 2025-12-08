@@ -1,0 +1,17 @@
+apiVersion: v2
+name: apigee-hybrid-mcp
+description: Helm chart for Apigee Hybrid MCP Server
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - apigee
+  - mcp
+  - api-management
+  - google-cloud
+home: https://github.com/SCGIS-Wales/apigee-hybrid-mcp
+sources:
+  - https://github.com/SCGIS-Wales/apigee-hybrid-mcp
+maintainers:
+  - name: SCGIS Wales
+    email: info@scgis.wales

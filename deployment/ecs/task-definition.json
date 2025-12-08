@@ -1,0 +1,81 @@
+{
+  "family": "apigee-hybrid-mcp",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/apigee-mcp-task-role",
+  "containerDefinitions": [
+    {
+      "name": "apigee-mcp-server",
+      "image": "ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/apigee-hybrid-mcp:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "APIGEE_MCP_LOG_LEVEL",
+          "value": "INFO"
+        },
+        {
+          "name": "APIGEE_MCP_MAX_RETRIES",
+          "value": "3"
+        },
+        {
+          "name": "APIGEE_MCP_REQUEST_TIMEOUT",
+          "value": "30"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "APIGEE_MCP_GOOGLE_PROJECT_ID",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:apigee-mcp/google-project-id"
+        },
+        {
+          "name": "APIGEE_MCP_APIGEE_ORGANIZATION",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:apigee-mcp/organization"
+        },
+        {
+          "name": "APIGEE_MCP_GOOGLE_CREDENTIALS_PATH",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:apigee-mcp/credentials-path"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/apigee-hybrid-mcp",
+          "awslogs-region": "REGION",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "python -c 'import sys; sys.exit(0)' || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      },
+      "readonlyRootFilesystem": true,
+      "linuxParameters": {
+        "capabilities": {
+          "drop": ["ALL"]
+        }
+      }
+    }
+  ],
+  "tags": [
+    {
+      "key": "Project",
+      "value": "Apigee-Hybrid-MCP"
+    },
+    {
+      "key": "Environment",
+      "value": "production"
+    }
+  ]
+}
