@@ -61,18 +61,39 @@ include = '\.pyi?$'
 line-length = 100
 target-version = "py314"
 select = [
-    "E",  # pycodestyle errors
-    "W",  # pycodestyle warnings
-    "F",  # pyflakes
-    "I",  # isort
-    "B",  # flake8-bugbear
-    "C4", # flake8-comprehensions
-    "UP", # pyupgrade
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "D",   # pydocstyle
+    "N",   # pep8-naming
+    "ANN", # flake8-annotations
+    "S",   # flake8-bandit (security)
+    "A",   # flake8-builtins
+    "COM", # flake8-commas
+    "T20", # flake8-print
+    "RET", # flake8-return
+    "SIM", # flake8-simplify
+    "ARG", # flake8-unused-arguments
 ]
 ignore = [
-    "E501", # line too long, handled by black
-    "B008", # do not perform function calls in argument defaults
+    "E501",    # line too long, handled by black
+    "B008",    # do not perform function calls in argument defaults
+    "D203",    # 1 blank line required before class docstring (conflicts with D211)
+    "D213",    # multi-line docstring summary should start at the second line (conflicts with D212)
+    "ANN101",  # missing type annotation for self in method
+    "ANN102",  # missing type annotation for cls in classmethod
+    "ANN401",  # dynamically typed expressions (Any) are disallowed
+    "S101",    # use of assert detected (needed for tests)
+    "COM812",  # trailing comma missing (conflicts with black)
+    "D107",    # missing docstring in __init__ (we document in class docstring)
 ]
+
+[tool.ruff.pydocstyle]
+convention = "google"  # Use Google-style docstrings
 
 [tool.mypy]
 python_version = "3.14"
