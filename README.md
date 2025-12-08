@@ -3,7 +3,7 @@
 A highly resilient and scalable Model Context Protocol (MCP) server for Google Apigee Hybrid API management, built with functional Python programming principles.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.14+](https://img.shields.io/badge/python-3.14+-blue.svg)](https://www.python.org/downloads/)
 [![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)](https://www.docker.com/)
 [![Kubernetes](https://img.shields.io/badge/kubernetes-ready-326CE5.svg)](https://kubernetes.io/)
 
@@ -110,7 +110,7 @@ This MCP server provides a comprehensive interface to Google Apigee Hybrid APIs,
 
 ### Required
 
-- Python 3.11+ (Note: 3.14 used in project config, but 3.11+ is compatible)
+- Python 3.14+
 - Google Cloud Project with Apigee organization
 - Service Account with Apigee API permissions
 - Docker (for containerized deployment)

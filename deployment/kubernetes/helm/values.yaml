@@ -5,9 +5,9 @@
 replicaCount: 2
 
 image:
-  repository: ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/apigee-hybrid-mcp
+  repository: ghcr.io/scgis-wales/apigee-hybrid-mcp
   pullPolicy: IfNotPresent
-  tag: "latest"
+  tag: "1.0.0"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -73,8 +73,29 @@ autoscaling:
   enabled: true
   minReplicas: 2
   maxReplicas: 10
-  targetCPUUtilizationPercentage: 80
+  targetCPUUtilizationPercentage: 75
   targetMemoryUtilizationPercentage: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+      - type: Pods
+        value: 1
+        periodSeconds: 60
+      selectPolicy: Min
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 30
+      - type: Pods
+        value: 2
+        periodSeconds: 30
+      selectPolicy: Max
 
 nodeSelector: {}
 
