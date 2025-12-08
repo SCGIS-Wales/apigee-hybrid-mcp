@@ -90,7 +90,10 @@ class ApigeeClient:
         if not self.credentials.valid:
             self.credentials.refresh(Request())
 
-        return self.credentials.token
+        token = self.credentials.token
+        if token is None:
+            raise ApigeeAPIError("Failed to obtain authentication token")
+        return str(token)
 
     def _build_url(self, path: str) -> str:
         """Build full API URL.
@@ -162,6 +165,8 @@ class ApigeeClient:
             # Circuit breaker pattern
             @self.circuit_breaker
             async def make_request() -> aiohttp.ClientResponse:
+                if self.session is None:
+                    raise ApigeeAPIError("Client session not initialized")
                 return await self.session.request(
                     method=method,
                     url=url,
@@ -188,7 +193,8 @@ class ApigeeClient:
 
                 # Parse JSON response
                 if response_text:
-                    return json.loads(response_text)
+                    parsed: dict[str, Any] = json.loads(response_text)
+                    return parsed
                 return {}
 
         except aiohttp.ClientError as e:

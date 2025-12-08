@@ -3,7 +3,7 @@
 import functools
 from typing import Any, Callable, Optional, Type, TypeVar
 
-from circuitbreaker import CircuitBreaker
+from circuitbreaker import CircuitBreaker  # type: ignore[import-untyped]
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -66,17 +66,17 @@ def with_retry(
         @functools.wraps(func)
         async def wrapper(*args: Any, **kwargs: Any) -> T:
             try:
-                return await func(*args, **kwargs)
+                return await func(*args, **kwargs)  # type: ignore[no-any-return,misc]
             except exceptions as e:
                 logger.warning(
                     "retry_attempt",
                     function=func.__name__,
                     error=str(e),
-                    attempt=wrapper.retry.statistics.get("attempt_number", 0),
+                    attempt=wrapper.retry.statistics.get("attempt_number", 0),  # type: ignore[attr-defined]
                 )
                 raise
 
-        return wrapper
+        return wrapper  # type: ignore[return-value]
 
     return decorator
 
@@ -93,7 +93,7 @@ class RateLimiter:
         """
         self.requests_per_window = requests_per_window
         self.window_seconds = window_seconds
-        self.tokens = requests_per_window
+        self.tokens: float = float(requests_per_window)
         self.last_update = 0.0
 
     def acquire(self) -> bool:

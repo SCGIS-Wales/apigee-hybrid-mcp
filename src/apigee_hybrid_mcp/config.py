@@ -20,8 +20,8 @@ Example:
 
 from typing import Optional
 
-from pydantic import ConfigDict, Field
-from pydantic_settings import BaseSettings
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -98,7 +98,7 @@ class Settings(BaseSettings):
         description="Rate limit window duration in seconds",
     )
 
-    model_config = ConfigDict(
+    model_config = SettingsConfigDict(
         env_prefix="APIGEE_MCP_",
         case_sensitive=False,
         env_file=".env",
