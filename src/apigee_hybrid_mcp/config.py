@@ -83,9 +83,9 @@ class Settings(BaseSettings):
         default=5,
         description="Number of failures before circuit breaker opens",
     )
-    circuit_breaker_timeout: int = Field(
+    circuit_breaker_recovery_timeout: int = Field(
         default=60,
-        description="Circuit breaker timeout in seconds before retry",
+        description="Circuit breaker recovery timeout in seconds before retry",
     )
 
     # Rate Limiting

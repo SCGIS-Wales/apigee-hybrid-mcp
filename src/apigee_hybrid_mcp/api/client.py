@@ -46,7 +46,7 @@ class ApigeeClient:
         )
         self.circuit_breaker = create_circuit_breaker(
             failure_threshold=settings.circuit_breaker_failure_threshold,
-            timeout_duration=settings.circuit_breaker_timeout,
+            recovery_timeout=settings.circuit_breaker_recovery_timeout,
             name="apigee_api",
         )
 

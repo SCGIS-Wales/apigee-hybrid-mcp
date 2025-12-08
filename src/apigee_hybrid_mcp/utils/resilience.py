@@ -20,14 +20,14 @@ T = TypeVar("T")
 
 def create_circuit_breaker(
     failure_threshold: int = 5,
-    timeout_duration: int = 60,
+    recovery_timeout: int = 60,
     name: Optional[str] = None,
 ) -> CircuitBreaker:
     """Create a circuit breaker instance.
 
     Args:
         failure_threshold: Number of failures before the circuit opens
-        timeout_duration: Duration in seconds before attempting to close the circuit
+        recovery_timeout: Duration in seconds before attempting to close the circuit
         name: Optional name for the circuit breaker
 
     Returns:
@@ -35,7 +35,7 @@ def create_circuit_breaker(
     """
     return CircuitBreaker(
         failure_threshold=failure_threshold,
-        recovery_timeout=timeout_duration,
+        recovery_timeout=recovery_timeout,
         name=name or "default",
     )
 
