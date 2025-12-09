@@ -410,7 +410,8 @@ class ParameterValidator:
             try:
                 if item in seen:
                     duplicates.add(item)
-                seen.add(item)
+                else:
+                    seen.add(item)
             except TypeError:
                 # For unhashable types, just continue
                 pass
