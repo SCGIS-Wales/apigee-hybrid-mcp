@@ -39,10 +39,13 @@ jobs:
       
       - name: Run Black (code formatting check)
         run: black --check src/ tests/
-      
+
       - name: Run Ruff (linting)
         run: ruff check src/ tests/
-      
+
+      - name: Run pydocstyle (docstring linting)
+        run: pydocstyle src/
+
       - name: Run MyPy (type checking)
         run: mypy src/
         continue-on-error: true

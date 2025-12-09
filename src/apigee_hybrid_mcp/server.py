@@ -752,16 +752,7 @@ async def list_tools() -> List[Tool]:
                 "required": ["organization", "environment", "keystore", "alias"],
             },
         ),
-        # Teams API (Note: Custom implementation for Hybrid - not a native Apigee API)
-        create_tool_definition(
-            name="list-teams",
-            description="List all teams in the organization (custom implementation for Hybrid)",
-            parameters={
-                "type": "object",
-                "properties": {},
-                "required": [],
-            },
-        ),
+        # Companies (Teams) API
         create_tool_definition(
             name="get-team",
             description="Get details of a specific team",
@@ -1158,86 +1149,28 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 return format_api_response(data, f"Get Keystore Alias: {alias}")
 
             # Companies (Teams) API
-            # Teams API (Custom implementation for Hybrid)
-            elif name == "list-teams":
-                try:
-                    teams = await team_repository.list_all()
-                    teams_data = {"teams": [team.to_dict() for team in teams]}
-                    return format_api_response(teams_data, "List Teams")
-                except Exception as e:
-                    return handle_api_error(e, "List Teams")
+            elif name == "list-companies":
+                org = arguments.get("organization", settings.apigee_organization)
+                params = {}
+                if arguments.get("expand"):
+                    params["expand"] = "true"
+                data = await client.get("companies", params=params)
+                return format_api_response(data, "List Companies")
 
-            elif name == "get-team":
-                try:
-                    team_id = arguments["team_id"]
-                    team = await team_repository.get_by_id(team_id)
-                    if not team:
-                        return [TextContent(type="text", text=f"Error: Team not found: {team_id}")]
-                    return format_api_response(team.to_dict(), f"Get Team: {team_id}")
-                except Exception as e:
-                    return handle_api_error(e, "Get Team")
+            elif name == "get-company":
+                org = arguments.get("organization", settings.apigee_organization)
+                company = arguments["company"]
+                data = await client.get(f"companies/{company}")
+                return format_api_response(data, f"Get Company: {company}")
 
-            elif name == "create-team":
-                try:
-                    team_create = TeamCreate(
-                        name=arguments["name"],
-                        description=arguments.get("description"),
-                        members=arguments.get("members", []),
-                    )
-                    team = await team_repository.create(team_create)
-                    return format_api_response(team.to_dict(), "Create Team")
-                except TeamAlreadyExistsError as e:
-                    return [
-                        TextContent(
-                            type="text",
-                            text=f"Error (409 Conflict): Team already exists: {e.team_name}",
-                        )
-                    ]
-                except ValueError as e:
-                    return [TextContent(type="text", text=f"Error (400 Bad Request): {str(e)}")]
-                except Exception as e:
-                    return handle_api_error(e, "Create Team")
-
-            elif name == "update-team":
-                try:
-                    team_id = arguments["team_id"]
-                    team_update = TeamUpdate(
-                        description=arguments.get("description"),
-                        members=arguments.get("members"),
-                    )
-                    team = await team_repository.update(team_id, team_update)
-                    return format_api_response(team.to_dict(), f"Update Team: {team_id}")
-                except TeamNotFoundError as e:
-                    return [
-                        TextContent(
-                            type="text", text=f"Error (404 Not Found): Team not found: {e.team_id}"
-                        )
-                    ]
-                except ValueError as e:
-                    return [TextContent(type="text", text=f"Error (400 Bad Request): {str(e)}")]
-                except Exception as e:
-                    return handle_api_error(e, "Update Team")
-
-            elif name == "delete-team":
-                try:
-                    team_id = arguments["team_id"]
-                    deleted = await team_repository.delete(team_id)
-                    if deleted:
-                        return [
-                            TextContent(
-                                type="text",
-                                text=f"Operation: Delete Team\n\nTeam {team_id} deleted successfully",
-                            )
-                        ]
-                    else:
-                        return [
-                            TextContent(
-                                type="text",
-                                text=f"Error (404 Not Found): Team not found: {team_id}",
-                            )
-                        ]
-                except Exception as e:
-                    return handle_api_error(e, "Delete Team")
+            elif name == "create-company":
+                org = arguments.get("organization", settings.apigee_organization)
+                company_data = {
+                    "name": arguments["name"],
+                    "displayName": arguments.get("displayName", arguments["name"]),
+                }
+                data = await client.post("companies", json_data=company_data)
+                return format_api_response(data, "Create Company")
 
             # Debug Sessions (Trace) API
             elif name == "create-debug-session":
@@ -1274,7 +1207,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
 
 
 def main() -> None:
-    """Main entry point for the Apigee Hybrid MCP server.
+    """Initialize and start the Apigee Hybrid MCP server.
 
     Initializes logging, configures the server, and starts the MCP
     stdio server for communication with MCP clients.

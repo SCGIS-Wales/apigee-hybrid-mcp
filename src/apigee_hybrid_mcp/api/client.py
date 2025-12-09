@@ -20,6 +20,13 @@ class ApigeeAPIError(Exception):
     def __init__(
         self, message: str, status_code: Optional[int] = None, response_body: Optional[str] = None
     ):
+        """Initialize the API error.
+
+        Args:
+            message: Error message
+            status_code: HTTP status code if available
+            response_body: Response body if available
+        """
         self.message = message
         self.status_code = status_code
         self.response_body = response_body
@@ -83,7 +90,10 @@ class ApigeeClient:
         if not self.credentials.valid:
             self.credentials.refresh(Request())
 
-        return self.credentials.token
+        token = self.credentials.token
+        if token is None:
+            raise ApigeeAPIError("Failed to obtain authentication token")
+        return str(token)
 
     def _build_url(self, path: str) -> str:
         """Build full API URL.
@@ -155,6 +165,8 @@ class ApigeeClient:
             # Circuit breaker pattern
             @self.circuit_breaker
             async def make_request() -> aiohttp.ClientResponse:
+                if self.session is None:
+                    raise ApigeeAPIError("Client session not initialized")
                 return await self.session.request(
                     method=method,
                     url=url,
@@ -163,26 +175,27 @@ class ApigeeClient:
                     headers=request_headers,
                 )
 
-            response = await make_request()
-            response_text = await response.text()
+            async with make_request() as response:
+                response_text = await response.text()
 
-            if response.status >= 400:
-                logger.error(
-                    "api_error",
-                    status=response.status,
-                    url=url,
-                    response=response_text,
-                )
-                raise ApigeeAPIError(
-                    f"API request failed: {response.status}",
-                    status_code=response.status,
-                    response_body=response_text,
-                )
+                if response.status >= 400:
+                    logger.error(
+                        "api_error",
+                        status=response.status,
+                        url=url,
+                        response=response_text,
+                    )
+                    raise ApigeeAPIError(
+                        f"API request failed: {response.status}",
+                        status_code=response.status,
+                        response_body=response_text,
+                    )
 
-            # Parse JSON response
-            if response_text:
-                return json.loads(response_text)
-            return {}
+                # Parse JSON response
+                if response_text:
+                    parsed: dict[str, Any] = json.loads(response_text)
+                    return parsed
+                return {}
 
         except aiohttp.ClientError as e:
             logger.error("client_error", error=str(e), url=url)
