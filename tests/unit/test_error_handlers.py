@@ -7,7 +7,6 @@ Tests cover:
 - External API error handling
 """
 
-import pytest
 
 from apigee_hybrid_mcp.error_handlers import (
     create_validation_error_response,

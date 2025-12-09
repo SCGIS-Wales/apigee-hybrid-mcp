@@ -13,7 +13,7 @@ import pytest
 from unittest.mock import AsyncMock
 from typing import Dict, Any
 
-from apigee_hybrid_mcp.api.client import ApigeeClient, ApigeeAPIError
+from apigee_hybrid_mcp.api.client import ApigeeClient
 
 
 @pytest.mark.asyncio

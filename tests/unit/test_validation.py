@@ -207,17 +207,13 @@ class TestParameterValidator:
 
     def test_validate_enum_valid(self) -> None:
         """Test enum validation with valid value."""
-        result = ParameterValidator.validate_enum(
-            "prod", "environment", ["dev", "staging", "prod"]
-        )
+        result = ParameterValidator.validate_enum("prod", "environment", ["dev", "staging", "prod"])
         assert result == "prod"
 
     def test_validate_enum_invalid(self) -> None:
         """Test enum validation with invalid value."""
         with pytest.raises(InvalidParameterError) as exc_info:
-            ParameterValidator.validate_enum(
-                "invalid", "environment", ["dev", "staging", "prod"]
-            )
+            ParameterValidator.validate_enum("invalid", "environment", ["dev", "staging", "prod"])
         assert "must be one of" in exc_info.value.details["reason"]
 
     def test_validate_not_expired_valid(self) -> None:

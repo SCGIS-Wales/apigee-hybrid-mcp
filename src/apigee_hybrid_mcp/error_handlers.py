@@ -37,7 +37,6 @@ def format_error_response(
     """
     if isinstance(error, AppError):
         # Use structured error information from AppError
-        error_dict = error.to_dict()
         log_level = "warning" if error.status < 500 else "error"
 
         # Log with appropriate level

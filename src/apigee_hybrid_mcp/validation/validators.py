@@ -21,7 +21,6 @@ from apigee_hybrid_mcp.exceptions import (
     ExpiredParameterError,
     InvalidParameterError,
     MissingParameterError,
-    ValidationError,
 )
 from apigee_hybrid_mcp.utils.logging import get_logger
 
@@ -52,7 +51,7 @@ def redact_sensitive_fields(data: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         New dictionary with sensitive fields redacted
     """
-    redacted = {}
+    redacted: Dict[str, Any] = {}
     for key, value in data.items():
         key_lower = key.lower()
         is_sensitive = any(pattern in key_lower for pattern in SENSITIVE_FIELD_PATTERNS)
@@ -62,9 +61,10 @@ def redact_sensitive_fields(data: Dict[str, Any]) -> Dict[str, Any]:
         elif isinstance(value, dict):
             redacted[key] = redact_sensitive_fields(value)
         elif isinstance(value, list):
-            redacted[key] = [
+            redacted_list: List[Any] = [
                 redact_sensitive_fields(item) if isinstance(item, dict) else item for item in value
             ]
+            redacted[key] = redacted_list
         else:
             redacted[key] = value
 
@@ -418,7 +418,7 @@ class ParameterValidator:
         if duplicates:
             raise InvalidParameterError(
                 parameter=parameter,
-                value=f"<contains_duplicates>",
+                value="<contains_duplicates>",
                 reason=f"must contain unique items, found duplicates: {duplicates}",
             )
 

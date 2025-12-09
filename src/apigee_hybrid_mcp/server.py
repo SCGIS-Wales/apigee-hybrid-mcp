@@ -38,7 +38,6 @@ from apigee_hybrid_mcp.error_handlers import format_error_response, map_reposito
 from apigee_hybrid_mcp.exceptions import (
     AppError,
     InvalidParameterError,
-    MissingParameterError,
 )
 from apigee_hybrid_mcp.models.team import TeamCreate, TeamUpdate
 from apigee_hybrid_mcp.repository.team_repository import (
@@ -47,7 +46,7 @@ from apigee_hybrid_mcp.repository.team_repository import (
     TeamNotFoundError,
 )
 from apigee_hybrid_mcp.utils.logging import configure_logging, get_logger
-from apigee_hybrid_mcp.validation import ParameterValidator, redact_sensitive_fields
+from apigee_hybrid_mcp.validation import ParameterValidator
 
 # Initialize logger
 logger = get_logger(__name__)
