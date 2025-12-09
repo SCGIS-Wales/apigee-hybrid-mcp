@@ -34,16 +34,8 @@ from mcp.types import Tool, TextContent
 
 from apigee_hybrid_mcp.api.client import ApigeeClient
 from apigee_hybrid_mcp.config import get_settings
-from apigee_hybrid_mcp.error_handlers import format_error_response, map_repository_error
-from apigee_hybrid_mcp.exceptions import (
-    AppError,
-    InvalidParameterError,
-)
-from apigee_hybrid_mcp.models.team import TeamCreate, TeamUpdate
 from apigee_hybrid_mcp.repository.team_repository import (
     InMemoryTeamRepository,
-    TeamAlreadyExistsError,
-    TeamNotFoundError,
 )
 from apigee_hybrid_mcp.utils.logging import configure_logging, get_logger
 from apigee_hybrid_mcp.validation import ParameterValidator
