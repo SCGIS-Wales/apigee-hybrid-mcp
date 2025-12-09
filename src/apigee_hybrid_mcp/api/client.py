@@ -10,6 +10,7 @@ from google.oauth2 import service_account
 
 from apigee_hybrid_mcp.config import Settings
 from apigee_hybrid_mcp.exceptions import (
+    AppError,
     AuthenticationError,
     ExternalServiceError,
     TimeoutError as AppTimeoutError,
@@ -194,9 +195,9 @@ class ApigeeClient:
         )
 
         try:
-            # Circuit breaker pattern
+            # Circuit breaker pattern - returns a coroutine that returns a ClientResponse
             @self.circuit_breaker
-            async def make_request() -> aiohttp.ClientResponse:
+            async def make_request_with_circuit_breaker() -> aiohttp.ClientResponse:
                 if self.session is None:
                     raise ExternalServiceError(
                         service="apigee_client",
@@ -210,7 +211,8 @@ class ApigeeClient:
                     headers=request_headers,
                 )
 
-            async with make_request() as response:
+            # Execute the request through circuit breaker
+            async with await make_request_with_circuit_breaker() as response:
                 response_text = await response.text()
 
                 if response.status >= 400:
@@ -272,8 +274,15 @@ class ApigeeClient:
                 message=f"Request failed: {str(e)}",
                 details={"error_type": type(e).__name__},
             )
-        except (AuthenticationError, ExternalServiceError, AppTimeoutError):
+        except (
+            AuthenticationError,
+            ExternalServiceError,
+            AppTimeoutError,
+        ):
             # Re-raise our custom exceptions
+            raise
+        except AppError:
+            # Re-raise any other AppError subclasses (like ResourceNotFoundError)
             raise
         except Exception as e:
             logger.error("unexpected_error", error=str(e), url=url)

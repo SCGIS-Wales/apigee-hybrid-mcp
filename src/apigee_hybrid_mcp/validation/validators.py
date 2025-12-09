@@ -432,12 +432,11 @@ class ToolParametersBase(BaseModel):
     to ensure consistent validation behavior.
     """
 
-    class Config:
-        """Pydantic model configuration."""
-
-        extra = "forbid"  # Reject unknown fields
-        str_strip_whitespace = True  # Strip whitespace from strings
-        validate_assignment = True  # Validate on attribute assignment
+    model_config = {
+        "extra": "forbid",  # Reject unknown fields
+        "str_strip_whitespace": True,  # Strip whitespace from strings
+        "validate_assignment": True,  # Validate on attribute assignment
+    }
 
 
 class OrganizationParameters(ToolParametersBase):
