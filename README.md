@@ -508,6 +508,121 @@ Key metrics to monitor:
 - **Readiness Probe**: Python interpreter check
 - **Custom Health Endpoint**: (if HTTP mode enabled)
 
+## 🚨 Error Handling
+
+The MCP server provides comprehensive error handling with structured error responses, correlation IDs for tracking, and automatic sensitive data redaction.
+
+### Error Response Format
+
+All errors follow a consistent JSON structure:
+
+```json
+{
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human-readable error message",
+    "status": 400,
+    "details": {
+      "parameter": "param_name",
+      "additional": "context"
+    },
+    "correlation_id": "uuid-for-tracking"
+  }
+}
+```
+
+### Error Categories
+
+| Status Code | Error Type | Description |
+|-------------|------------|-------------|
+| 401 | Authentication | Invalid or missing credentials |
+| 403 | Authorization | Insufficient permissions |
+| 404 | Not Found | Resource doesn't exist |
+| 408 | Timeout | Operation exceeded timeout |
+| 409 | Conflict | Resource already exists |
+| 422 | Validation | Parameter validation failed |
+| 429 | Rate Limit | Too many requests |
+| 500 | Server Error | Internal server error |
+| 502 | Bad Gateway | External service error |
+| 503 | Service Unavailable | Service temporarily down |
+
+### Common Error Codes
+
+- `INVALID_PARAMETER`: Parameter value is invalid
+- `MISSING_PARAMETER`: Required parameter not provided
+- `EXPIRED_PARAMETER`: Time-bound parameter has expired
+- `AUTHENTICATION_ERROR`: Authentication failed
+- `AUTHORIZATION_ERROR`: Access denied
+- `RESOURCE_NOT_FOUND`: Resource doesn't exist
+- `RESOURCE_ALREADY_EXISTS`: Resource already exists
+- `TIMEOUT_ERROR`: Operation timed out
+- `EXTERNAL_SERVICE_ERROR`: External service failure
+
+### Example Error Responses
+
+**Missing Parameter (422):**
+```json
+{
+  "error": {
+    "code": "MISSING_PARAMETER",
+    "message": "Missing required parameter: 'organization'",
+    "status": 422,
+    "details": {
+      "parameter": "organization"
+    },
+    "correlation_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+  }
+}
+```
+
+**Resource Not Found (404):**
+```json
+{
+  "error": {
+    "code": "RESOURCE_NOT_FOUND",
+    "message": "Team not found: team-123",
+    "status": 404,
+    "details": {
+      "resource_type": "team",
+      "resource_id": "team-123"
+    },
+    "correlation_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+  }
+}
+```
+
+**Authentication Error (401):**
+```json
+{
+  "error": {
+    "code": "AUTHENTICATION_ERROR",
+    "message": "Authentication failed",
+    "status": 401,
+    "details": {
+      "reason": "token_expired"
+    },
+    "correlation_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+  }
+}
+```
+
+### Correlation IDs
+
+Every error includes a unique `correlation_id` (UUID) for tracking. When reporting issues:
+
+1. Include the full correlation ID
+2. Provide the timestamp
+3. Describe the operation that failed
+
+### Sensitive Data Redaction
+
+Sensitive fields (tokens, passwords, keys, credentials) are automatically redacted in:
+- Error details
+- Log messages
+- Debug output
+
+For complete error code reference, see [ERROR_CODES.md](docs/ERROR_CODES.md).
+
 ## 🔧 Troubleshooting
 
 ### Common Issues

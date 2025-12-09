@@ -13,7 +13,7 @@ import pytest
 from unittest.mock import AsyncMock
 from typing import Dict, Any
 
-from apigee_hybrid_mcp.api.client import ApigeeClient, ApigeeAPIError
+from apigee_hybrid_mcp.api.client import ApigeeClient
 
 
 @pytest.mark.asyncio
@@ -295,14 +295,17 @@ class TestAPIProducts:
             - 409 error for duplicate product name
             - Error details are captured
         """
+        # Import new exception types
+        from apigee_hybrid_mcp.exceptions import ResourceNotFoundError
+
         # Arrange - test 404
         mock_apigee_client.session.request.return_value.__aenter__.return_value.status = 404
         mock_apigee_client.session.request.return_value.__aenter__.return_value.text = AsyncMock(
             return_value='{"error": {"message": "Product not found"}}'
         )
 
-        # Act & Assert
-        with pytest.raises(ApigeeAPIError) as exc_info:
+        # Act & Assert - expect ResourceNotFoundError instead of ApigeeAPIError
+        with pytest.raises(ResourceNotFoundError) as exc_info:
             await mock_apigee_client.get("apiproducts/nonexistent")
 
-        assert exc_info.value.status_code == 404
+        assert exc_info.value.status == 404
