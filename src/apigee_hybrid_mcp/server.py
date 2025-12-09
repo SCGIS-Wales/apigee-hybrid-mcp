@@ -34,6 +34,12 @@ from mcp.types import Tool, TextContent
 
 from apigee_hybrid_mcp.api.client import ApigeeClient
 from apigee_hybrid_mcp.config import get_settings
+from apigee_hybrid_mcp.error_handlers import format_error_response, map_repository_error
+from apigee_hybrid_mcp.exceptions import (
+    AppError,
+    InvalidParameterError,
+    MissingParameterError,
+)
 from apigee_hybrid_mcp.models.team import TeamCreate, TeamUpdate
 from apigee_hybrid_mcp.repository.team_repository import (
     InMemoryTeamRepository,
@@ -41,6 +47,7 @@ from apigee_hybrid_mcp.repository.team_repository import (
     TeamNotFoundError,
 )
 from apigee_hybrid_mcp.utils.logging import configure_logging, get_logger
+from apigee_hybrid_mcp.validation import ParameterValidator, redact_sensitive_fields
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -119,7 +126,7 @@ def handle_api_error(error: Exception, operation: str) -> List[TextContent]:
     """Handle API errors and format error messages.
 
     Provides consistent error handling and formatting across all tools.
-    Logs errors and returns user-friendly error messages.
+    Uses the new exception handling system for structured errors.
 
     Args:
         error: The exception that occurred
@@ -135,9 +142,8 @@ def handle_api_error(error: Exception, operation: str) -> List[TextContent]:
         ... except Exception as e:
         ...     return handle_api_error(e, "List Organizations")
     """
-    error_message = f"Error in {operation}: {str(error)}"
-    logger.error("api_operation_failed", operation=operation, error=str(error))
-    return [TextContent(type="text", text=error_message)]
+    # Use new error formatter with proper logging and correlation IDs
+    return format_error_response(error, operation, include_traceback=False)
 
 
 @app.list_tools()
@@ -754,6 +760,14 @@ async def list_tools() -> List[Tool]:
         ),
         # Companies (Teams) API
         create_tool_definition(
+            name="list-teams",
+            description="List all teams",
+            parameters={
+                "type": "object",
+                "properties": {},
+            },
+        ),
+        create_tool_definition(
             name="get-team",
             description="Get details of a specific team",
             parameters={
@@ -1171,6 +1185,116 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 }
                 data = await client.post("companies", json_data=company_data)
                 return format_api_response(data, "Create Company")
+
+            # Teams API (custom implementation for Apigee Hybrid)
+            elif name == "list-teams":
+                try:
+                    teams = await team_repository.list_all()
+                    teams_data = [team.to_dict() for team in teams]
+                    return format_api_response({"teams": teams_data}, "List Teams")
+                except Exception as e:
+                    mapped_error = map_repository_error(e)
+                    return handle_api_error(mapped_error, name)
+
+            elif name == "get-team":
+                try:
+                    team_id = ParameterValidator.validate_non_empty_string(
+                        arguments.get("team_id"), "team_id"
+                    )
+                    team = await team_repository.get_by_id(team_id)
+                    if not team:
+                        from apigee_hybrid_mcp.exceptions import ResourceNotFoundError
+
+                        raise ResourceNotFoundError(
+                            resource_type="team",
+                            resource_id=team_id,
+                        )
+                    return format_api_response(team.to_dict(), f"Get Team: {team_id}")
+                except (AppError, TeamNotFoundError) as e:
+                    mapped_error = map_repository_error(e)
+                    return handle_api_error(mapped_error, name)
+
+            elif name == "create-team":
+                try:
+                    # Validate required parameters
+                    name_val = ParameterValidator.validate_non_empty_string(
+                        arguments.get("name"), "name"
+                    )
+
+                    # Create team data with validation via Pydantic
+                    team_data = TeamCreate(
+                        name=name_val,
+                        description=arguments.get("description"),
+                        members=arguments.get("members", []),
+                    )
+
+                    team = await team_repository.create(team_data)
+                    logger.info(
+                        "team_created",
+                        team_id=team.id,
+                        team_name=team.name,
+                    )
+                    return format_api_response(team.to_dict(), "Create Team")
+                except (AppError, TeamAlreadyExistsError) as e:
+                    mapped_error = map_repository_error(e)
+                    return handle_api_error(mapped_error, name)
+                except ValueError as e:
+                    # Pydantic validation errors
+                    return handle_api_error(
+                        InvalidParameterError(
+                            parameter="team_data",
+                            value="",
+                            reason=str(e),
+                        ),
+                        name,
+                    )
+
+            elif name == "update-team":
+                try:
+                    team_id = ParameterValidator.validate_non_empty_string(
+                        arguments.get("team_id"), "team_id"
+                    )
+
+                    # Create update data
+                    update_data = TeamUpdate(
+                        description=arguments.get("description"),
+                        members=arguments.get("members"),
+                    )
+
+                    team = await team_repository.update(team_id, update_data)
+                    logger.info(
+                        "team_updated",
+                        team_id=team.id,
+                        team_name=team.name,
+                    )
+                    return format_api_response(team.to_dict(), f"Update Team: {team_id}")
+                except (AppError, TeamNotFoundError) as e:
+                    mapped_error = map_repository_error(e)
+                    return handle_api_error(mapped_error, name)
+                except ValueError as e:
+                    return handle_api_error(
+                        InvalidParameterError(
+                            parameter="team_data",
+                            value="",
+                            reason=str(e),
+                        ),
+                        name,
+                    )
+
+            elif name == "delete-team":
+                try:
+                    team_id = ParameterValidator.validate_non_empty_string(
+                        arguments.get("team_id"), "team_id"
+                    )
+                    await team_repository.delete(team_id)
+                    logger.info("team_deleted", team_id=team_id)
+                    return format_api_response(
+                        {"success": True, "team_id": team_id},
+                        f"Delete Team: {team_id}",
+                    )
+                except (AppError, TeamNotFoundError) as e:
+                    mapped_error = map_repository_error(e)
+                    return handle_api_error(mapped_error, name)
 
             # Debug Sessions (Trace) API
             elif name == "create-debug-session":

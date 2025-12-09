@@ -63,8 +63,7 @@ def redact_sensitive_fields(data: Dict[str, Any]) -> Dict[str, Any]:
             redacted[key] = redact_sensitive_fields(value)
         elif isinstance(value, list):
             redacted[key] = [
-                redact_sensitive_fields(item) if isinstance(item, dict) else item
-                for item in value
+                redact_sensitive_fields(item) if isinstance(item, dict) else item for item in value
             ]
         else:
             redacted[key] = value

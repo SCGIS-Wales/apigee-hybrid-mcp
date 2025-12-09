@@ -1,5 +1,6 @@
 """Base API client for Apigee Hybrid with authentication and error handling."""
 
+import asyncio
 import json
 from typing import Any, Optional
 
@@ -8,14 +9,24 @@ from google.auth.transport.requests import Request
 from google.oauth2 import service_account
 
 from apigee_hybrid_mcp.config import Settings
+from apigee_hybrid_mcp.exceptions import (
+    AuthenticationError,
+    ExternalServiceError,
+    TimeoutError as AppTimeoutError,
+)
 from apigee_hybrid_mcp.utils.logging import get_logger
 from apigee_hybrid_mcp.utils.resilience import RateLimiter, create_circuit_breaker
 
 logger = get_logger(__name__)
 
 
+# Keep legacy exception for backward compatibility
 class ApigeeAPIError(Exception):
-    """Base exception for Apigee API errors."""
+    """Base exception for Apigee API errors.
+
+    Deprecated: Use exceptions from apigee_hybrid_mcp.exceptions instead.
+    This class is maintained for backward compatibility only.
+    """
 
     def __init__(
         self, message: str, status_code: Optional[int] = None, response_body: Optional[str] = None
@@ -82,17 +93,29 @@ class ApigeeClient:
             Bearer token for API requests
 
         Raises:
-            ApigeeAPIError: If credentials are not configured
+            AuthenticationError: If credentials are not configured or invalid
         """
         if not self.credentials:
-            raise ApigeeAPIError("Google Cloud credentials not configured")
+            raise AuthenticationError(
+                message="Google Cloud credentials not configured",
+                details={"reason": "credentials_path_not_set"},
+            )
 
-        if not self.credentials.valid:
-            self.credentials.refresh(Request())
+        try:
+            if not self.credentials.valid:
+                self.credentials.refresh(Request())
+        except Exception as e:
+            raise AuthenticationError(
+                message="Failed to refresh authentication token",
+                details={"reason": str(e)},
+            )
 
         token = self.credentials.token
         if token is None:
-            raise ApigeeAPIError("Failed to obtain authentication token")
+            raise AuthenticationError(
+                message="Failed to obtain authentication token",
+                details={"reason": "token_is_none"},
+            )
         return str(token)
 
     def _build_url(self, path: str) -> str:
@@ -134,15 +157,24 @@ class ApigeeClient:
             Response JSON data
 
         Raises:
-            ApigeeAPIError: If request fails
+            AuthenticationError: If authentication fails
+            ExternalServiceError: If API request fails
+            AppTimeoutError: If request times out
         """
         if not self.session:
-            raise ApigeeAPIError("Client session not initialized. Use async context manager.")
+            raise ExternalServiceError(
+                service="apigee_client",
+                message="Client session not initialized. Use async context manager.",
+            )
 
         # Rate limiting
         if not self.rate_limiter.acquire():
             logger.warning("rate_limit_exceeded", path=path)
-            raise ApigeeAPIError("Rate limit exceeded. Please try again later.")
+            raise ExternalServiceError(
+                service="apigee_api",
+                message="Rate limit exceeded. Please try again later.",
+                status=429,
+            )
 
         url = self._build_url(path)
 
@@ -166,7 +198,10 @@ class ApigeeClient:
             @self.circuit_breaker
             async def make_request() -> aiohttp.ClientResponse:
                 if self.session is None:
-                    raise ApigeeAPIError("Client session not initialized")
+                    raise ExternalServiceError(
+                        service="apigee_client",
+                        message="Client session not initialized",
+                    )
                 return await self.session.request(
                     method=method,
                     url=url,
@@ -183,13 +218,40 @@ class ApigeeClient:
                         "api_error",
                         status=response.status,
                         url=url,
-                        response=response_text,
+                        response=response_text[:500],  # Truncate long responses
                     )
-                    raise ApigeeAPIError(
-                        f"API request failed: {response.status}",
-                        status_code=response.status,
-                        response_body=response_text,
-                    )
+
+                    # Map HTTP status to appropriate exception
+                    if response.status == 401:
+                        raise AuthenticationError(
+                            message="API authentication failed",
+                            details={
+                                "status": response.status,
+                                "url": url,
+                            },
+                        )
+                    elif response.status == 404:
+                        from apigee_hybrid_mcp.exceptions import ResourceNotFoundError
+
+                        raise ResourceNotFoundError(
+                            resource_type="api_resource",
+                            resource_id=path,
+                            details={
+                                "status": response.status,
+                                "response": response_text[:200],
+                            },
+                        )
+                    else:
+                        raise ExternalServiceError(
+                            service="apigee_api",
+                            message=f"API request failed with status {response.status}",
+                            status=response.status if response.status >= 500 else 502,
+                            details={
+                                "status": response.status,
+                                "url": url,
+                                "response": response_text[:200],
+                            },
+                        )
 
                 # Parse JSON response
                 if response_text:
@@ -197,12 +259,29 @@ class ApigeeClient:
                     return parsed
                 return {}
 
+        except asyncio.TimeoutError as e:
+            logger.error("request_timeout", error=str(e), url=url)
+            raise AppTimeoutError(
+                operation=f"{method} {path}",
+                timeout_seconds=self.settings.request_timeout,
+            )
         except aiohttp.ClientError as e:
             logger.error("client_error", error=str(e), url=url)
-            raise ApigeeAPIError(f"Request failed: {str(e)}")
+            raise ExternalServiceError(
+                service="apigee_api",
+                message=f"Request failed: {str(e)}",
+                details={"error_type": type(e).__name__},
+            )
+        except (AuthenticationError, ExternalServiceError, AppTimeoutError):
+            # Re-raise our custom exceptions
+            raise
         except Exception as e:
             logger.error("unexpected_error", error=str(e), url=url)
-            raise ApigeeAPIError(f"Unexpected error: {str(e)}")
+            raise ExternalServiceError(
+                service="apigee_api",
+                message=f"Unexpected error: {str(e)}",
+                details={"error_type": type(e).__name__},
+            )
 
     async def get(self, path: str, params: Optional[dict[str, Any]] = None) -> dict[str, Any]:
         """Make a GET request.
