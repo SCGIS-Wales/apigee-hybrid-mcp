@@ -38,7 +38,8 @@ This MCP server provides a comprehensive interface to Google Apigee Hybrid APIs,
 ### Key Highlights
 
 - **Functional Python Design**: Pure functions, immutable data structures, explicit error handling
-- **Comprehensive API Coverage**: All major Apigee Hybrid APIs (Organizations, Environments, API Proxies, Developers, Apps, API Products, Shared Flows, Keystores, Companies, Debug Sessions)
+- **Comprehensive API Coverage**: All major Apigee Hybrid APIs (Organizations, Environments, API Proxies, Developers, Apps, API Products, Shared Flows, Keystores, Debug Sessions)
+- **Custom Teams API**: Team-based organizational management (custom implementation for Hybrid)
 - **Production-Ready**: Circuit breakers, exponential backoff, rate limiting, structured logging
 - **Containerized**: Multi-stage Docker builds with security best practices
 - **Cloud-Native**: Ready for AWS ECS and EKS deployment with Helm charts
@@ -52,12 +53,14 @@ This MCP server provides a comprehensive interface to Google Apigee Hybrid APIs,
 - ✅ **Environments**: Create, configure, and manage deployment environments
 - ✅ **API Proxy Lifecycle**: Deploy, undeploy, list, and manage API proxy revisions
 - ✅ **Developer Management**: Create, update, and manage API consumers
-- ✅ **App Management**: Developer apps and company apps with credential management
+- ✅ **App Management**: Developer apps with credential management
 - ✅ **API Products**: Define product bundles with quotas and rate limits
 - ✅ **Shared Flows**: Reusable policy sequences
 - ✅ **Keystores & Truststores**: Certificate and key management with aliases
-- ✅ **Companies (Teams)**: Team-based API access management
+- ✅ **Teams**: Custom team-based organizational management (Hybrid-specific)
 - ✅ **Debug Sessions (Trace)**: Request tracing and troubleshooting
+
+**Note**: Teams API is a custom implementation for Apigee Hybrid. Unlike Apigee OPDK (which has "companies"), Apigee Hybrid does not provide a native companies/teams API. This implementation provides in-memory team management suitable for organizational needs.
 
 ### Technical Features
 
@@ -400,8 +403,10 @@ Full API documentation is archived in the [`archive/apigee-docs/`](archive/apige
 | Shared Flows | List, Get, Deploy, Undeploy | ✅ `list-shared-flows`, `get-shared-flow`, `deploy-shared-flow` |
 | Keystores | List, Get, Create, Delete | ✅ `list-keystores`, `get-keystore` |
 | Keystore Aliases | List, Get, Create, Update, Delete | ✅ `list-keystore-aliases`, `get-keystore-alias` |
-| Companies (Teams) | List, Get, Create, Update, Delete | ✅ `list-companies`, `get-company`, `create-company` |
+| Teams | List, Get, Create, Update, Delete | ✅ `list-teams`, `get-team`, `create-team`, `update-team`, `delete-team` |
 | Debug Sessions | Create, Get Data | ✅ `create-debug-session`, `get-debug-session-data` |
+
+**Note**: The Teams API is a custom implementation for organizational management in Apigee Hybrid. It provides in-memory storage and is not part of the native Apigee API.
 
 ## 🧪 Testing
 

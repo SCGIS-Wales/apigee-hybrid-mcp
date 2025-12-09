@@ -34,6 +34,12 @@ from mcp.types import Tool, TextContent
 
 from apigee_hybrid_mcp.api.client import ApigeeClient
 from apigee_hybrid_mcp.config import get_settings
+from apigee_hybrid_mcp.models.team import TeamCreate, TeamUpdate
+from apigee_hybrid_mcp.repository.team_repository import (
+    InMemoryTeamRepository,
+    TeamAlreadyExistsError,
+    TeamNotFoundError,
+)
 from apigee_hybrid_mcp.utils.logging import configure_logging, get_logger
 
 # Initialize logger
@@ -41,6 +47,9 @@ logger = get_logger(__name__)
 
 # Initialize MCP server
 app = Server("apigee-hybrid-mcp")
+
+# Initialize team repository (singleton for this server instance)
+team_repository = InMemoryTeamRepository()
 
 
 def create_tool_definition(
@@ -150,7 +159,7 @@ async def list_tools() -> List[Tool]:
         - API Products: Manage API product bundles
         - Shared Flows: Manage reusable policy flows
         - Keystores: Manage certificates and keys
-        - Companies: Manage teams and organizations
+        - Teams: Manage teams for organizational access
         - Debug Sessions: Trace and debug API requests
     """
     return [
@@ -745,61 +754,77 @@ async def list_tools() -> List[Tool]:
         ),
         # Companies (Teams) API
         create_tool_definition(
-            name="list-companies",
-            description="List all companies (teams) in an organization",
+            name="get-team",
+            description="Get details of a specific team",
             parameters={
                 "type": "object",
                 "properties": {
-                    "organization": {
+                    "team_id": {
                         "type": "string",
-                        "description": "Organization ID",
-                    },
-                    "expand": {
-                        "type": "boolean",
-                        "description": "Include detailed information",
+                        "description": "Team ID",
                     },
                 },
-                "required": ["organization"],
+                "required": ["team_id"],
             },
         ),
         create_tool_definition(
-            name="get-company",
-            description="Get details of a specific company (team)",
+            name="create-team",
+            description="Create a new team",
             parameters={
                 "type": "object",
                 "properties": {
-                    "organization": {
-                        "type": "string",
-                        "description": "Organization ID",
-                    },
-                    "company": {
-                        "type": "string",
-                        "description": "Company name",
-                    },
-                },
-                "required": ["organization", "company"],
-            },
-        ),
-        create_tool_definition(
-            name="create-company",
-            description="Create a new company (team)",
-            parameters={
-                "type": "object",
-                "properties": {
-                    "organization": {
-                        "type": "string",
-                        "description": "Organization ID",
-                    },
                     "name": {
                         "type": "string",
-                        "description": "Company name (required, immutable)",
+                        "description": "Team name (unique, alphanumeric with hyphens/underscores)",
                     },
-                    "displayName": {
+                    "description": {
                         "type": "string",
-                        "description": "Display name",
+                        "description": "Team description",
+                    },
+                    "members": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "List of team member identifiers (emails or user IDs)",
                     },
                 },
-                "required": ["organization", "name"],
+                "required": ["name"],
+            },
+        ),
+        create_tool_definition(
+            name="update-team",
+            description="Update an existing team",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "team_id": {
+                        "type": "string",
+                        "description": "Team ID",
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Updated team description",
+                    },
+                    "members": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Updated list of team members",
+                    },
+                },
+                "required": ["team_id"],
+            },
+        ),
+        create_tool_definition(
+            name="delete-team",
+            description="Delete a team",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "team_id": {
+                        "type": "string",
+                        "description": "Team ID",
+                    },
+                },
+                "required": ["team_id"],
             },
         ),
         # Debug Sessions (Trace) API
