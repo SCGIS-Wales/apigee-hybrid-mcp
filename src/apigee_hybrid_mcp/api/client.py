@@ -20,6 +20,10 @@ from apigee_hybrid_mcp.utils.resilience import RateLimiter, create_circuit_break
 
 logger = get_logger(__name__)
 
+# Constants for response handling
+MAX_RESPONSE_LOG_LENGTH = 500  # Maximum characters to log from error responses
+MAX_RESPONSE_DETAIL_LENGTH = 200  # Maximum characters for error details
+
 
 # Keep legacy exception for backward compatibility
 class ApigeeAPIError(Exception):
@@ -220,7 +224,7 @@ class ApigeeClient:
                         "api_error",
                         status=response.status,
                         url=url,
-                        response=response_text[:500],  # Truncate long responses
+                        response=response_text[:MAX_RESPONSE_LOG_LENGTH],
                     )
 
                     # Map HTTP status to appropriate exception
@@ -240,7 +244,7 @@ class ApigeeClient:
                             resource_id=path,
                             details={
                                 "status": response.status,
-                                "response": response_text[:200],
+                                "response": response_text[:MAX_RESPONSE_DETAIL_LENGTH],
                             },
                         )
                     else:
@@ -251,7 +255,7 @@ class ApigeeClient:
                             details={
                                 "status": response.status,
                                 "url": url,
-                                "response": response_text[:200],
+                                "response": response_text[:MAX_RESPONSE_DETAIL_LENGTH],
                             },
                         )
 

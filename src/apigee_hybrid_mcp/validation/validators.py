@@ -417,10 +417,11 @@ class ParameterValidator:
                 pass
 
         if duplicates:
+            # Don't include actual duplicate values to avoid exposing sensitive data
             raise InvalidParameterError(
                 parameter=parameter,
                 value="<contains_duplicates>",
-                reason=f"must contain unique items, found duplicates: {duplicates}",
+                reason=f"must contain unique items, found {len(duplicates)} duplicate(s)",
             )
 
         return value

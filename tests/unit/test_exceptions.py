@@ -8,7 +8,6 @@ Tests cover:
 - Error codes and status codes
 """
 
-
 from apigee_hybrid_mcp.exceptions import (
     AppError,
     AuthenticationError,
